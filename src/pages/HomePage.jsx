@@ -96,7 +96,7 @@ export default function HomePage() {
                     letterSpacing: "0.06em",
                   }}
                 >
-                  NEW COLLECTION 2025
+                  NEW COLLECTION 2026
                 </span>
               </div>
 
