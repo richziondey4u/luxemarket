@@ -2,6 +2,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import Navbar from "./Navbar.jsx";
 import Footer from "./Footer.jsx";
+import AdvertBanner from "./AdvertBanner.jsx";
 
 export default function Layout() {
   const { pathname } = useLocation();
@@ -19,6 +20,7 @@ export default function Layout() {
       }}
     >
       <Navbar />
+      <AdvertBanner />
       <main
         style={{
           flex: 1,
