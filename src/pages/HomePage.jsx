@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import {
   ArrowRight,
-  Zap,
   Shield,
   Truck,
   RotateCcw,
@@ -17,100 +16,84 @@ import ProductCard from "../components/product/ProductCard.jsx";
 import ProductSkeleton from "../components/product/ProductSkeleton.jsx";
 import { CATEGORIES } from "../api/products.js";
 
-const PERKS = [
-  {
-    icon: <Truck style={{ width: "20px", height: "20px" }} />,
-    title: "Free Shipping",
-    desc: "On orders over ₦50,000",
-  },
-  {
-    icon: <Shield style={{ width: "20px", height: "20px" }} />,
-    title: "Secure Payment",
-    desc: "Paystack encrypted",
-  },
-  {
-    icon: <RotateCcw style={{ width: "20px", height: "20px" }} />,
-    title: "Easy Returns",
-    desc: "30-day return policy",
-  },
-  {
-    icon: <Zap style={{ width: "20px", height: "20px" }} />,
-    title: "Fast Delivery",
-    desc: "2–5 business days",
-  },
-];
-
 export default function HomePage() {
   const { data: featured, isLoading: fl } = useFeaturedProducts(8);
   const { data: newArrivals, isLoading: nl } = useNewArrivals();
   const { data: bestSellers, isLoading: bl } = useBestSellers();
 
+  const S = {
+    container: { maxWidth: "1280px", margin: "0 auto", padding: "0 16px" },
+    section: { padding: "56px 0 0" },
+    sectionHead: {
+      display: "flex",
+      alignItems: "flex-end",
+      justifyContent: "space-between",
+      marginBottom: "24px",
+      gap: "12px",
+      flexWrap: "wrap",
+    },
+    label: {
+      fontSize: "0.72rem",
+      fontWeight: "600",
+      textTransform: "uppercase",
+      letterSpacing: "0.08em",
+      marginBottom: "5px",
+    },
+    grid: {
+      display: "grid",
+      gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 200px), 1fr))",
+      gap: "16px",
+    },
+  };
+
   return (
-    <div style={{ backgroundColor: "#ffffff" }}>
+    <div style={{ backgroundColor: "#ffffff", overflowX: "hidden" }}>
       {/* ── Hero ── */}
       <section
         style={{
           backgroundColor: "#f9f9f9",
           borderBottom: "1px solid #ebebeb",
-          padding: "80px 0 60px",
-          position: "relative",
-          overflow: "hidden",
+          padding: "48px 0",
         }}
       >
-        {/* Decorative circle */}
-        <div
-          style={{
-            position: "absolute",
-            right: "-80px",
-            top: "-80px",
-            width: "500px",
-            height: "500px",
-            borderRadius: "50%",
-            backgroundColor: "rgb(79 125 82 / 0.05)",
-            pointerEvents: "none",
-          }}
-        />
-
-        <div
-          style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 1.5rem" }}
-        >
+        <div style={S.container}>
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "64px",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
+              gap: "40px",
               alignItems: "center",
             }}
           >
-            {/* Text */}
-            <div className="animate-fade-up">
+            {/* Text side */}
+            <div>
               <div
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
-                  gap: "8px",
+                  gap: "7px",
                   backgroundColor: "#f4f7f4",
                   border: "1px solid #a3c4a5",
                   borderRadius: "99px",
-                  padding: "6px 14px",
-                  marginBottom: "24px",
+                  padding: "5px 13px",
+                  marginBottom: "20px",
                 }}
               >
                 <span
                   style={{
-                    width: "8px",
-                    height: "8px",
+                    width: "7px",
+                    height: "7px",
                     backgroundColor: "#4f7d52",
                     borderRadius: "50%",
                   }}
-                  className="animate-pulse-slow"
                 />
                 <span
                   style={{
                     color: "#4f7d52",
-                    fontSize: "0.8rem",
+                    fontSize: "0.72rem",
                     fontWeight: "600",
-                    letterSpacing: "0.05em",
+                    letterSpacing: "0.06em",
                   }}
                 >
                   NEW COLLECTION 2025
@@ -120,11 +103,11 @@ export default function HomePage() {
               <h1
                 style={{
                   fontFamily: "Playfair Display, Georgia, serif",
-                  fontSize: "clamp(2.5rem, 5vw, 3.75rem)",
+                  fontSize: "clamp(2.2rem, 6vw, 3.75rem)",
                   fontWeight: "700",
                   color: "#141414",
                   lineHeight: "1.1",
-                  marginBottom: "20px",
+                  marginBottom: "16px",
                 }}
               >
                 Discover
@@ -137,25 +120,21 @@ export default function HomePage() {
               <p
                 style={{
                   color: "#757575",
-                  fontSize: "1rem",
-                  lineHeight: "1.7",
-                  maxWidth: "420px",
-                  marginBottom: "36px",
+                  fontSize: "0.95rem",
+                  lineHeight: "1.75",
+                  maxWidth: "400px",
+                  marginBottom: "28px",
                 }}
               >
                 Find top quality products at the best prices. Shop the latest
                 collection and enjoy exclusive deals.
               </p>
 
-              <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
                 <Link
                   to="/category/smartphones"
                   className="btn-primary"
-                  style={{
-                    fontSize: "0.8rem",
-                    padding: "12px 28px",
-                    borderRadius: "6px",
-                  }}
+                  style={{ borderRadius: "6px" }}
                 >
                   Shop Now{" "}
                   <ArrowRight style={{ width: "15px", height: "15px" }} />
@@ -163,44 +142,56 @@ export default function HomePage() {
                 <Link
                   to="/category/tops"
                   className="btn-secondary"
-                  style={{
-                    fontSize: "0.8rem",
-                    padding: "12px 28px",
-                    borderRadius: "6px",
-                  }}
+                  style={{ borderRadius: "6px" }}
                 >
                   Explore{" "}
                   <ArrowRight style={{ width: "15px", height: "15px" }} />
                 </Link>
               </div>
 
-              {/* Perks row */}
+              {/* Perks */}
               <div
                 style={{
                   display: "flex",
-                  gap: "28px",
-                  marginTop: "48px",
-                  paddingTop: "32px",
+                  gap: "20px",
+                  marginTop: "36px",
+                  paddingTop: "28px",
                   borderTop: "1px solid #ebebeb",
                   flexWrap: "wrap",
                 }}
               >
-                {PERKS.map((p, i) => (
+                {[
+                  {
+                    Icon: Truck,
+                    title: "Free Shipping",
+                    desc: "On orders over ₦50k",
+                  },
+                  {
+                    Icon: RotateCcw,
+                    title: "Easy Returns",
+                    desc: "30-day policy",
+                  },
+                  {
+                    Icon: Shield,
+                    title: "Secure Payment",
+                    desc: "100% secure checkout",
+                  },
+                ].map(({ Icon, title, desc }, i) => (
                   <div
                     key={i}
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "10px",
+                      gap: "9px",
                     }}
                   >
                     <div
                       style={{
-                        width: "38px",
-                        height: "38px",
+                        width: "36px",
+                        height: "36px",
                         backgroundColor: "#f4f7f4",
                         border: "1px solid #a3c4a5",
-                        borderRadius: "10px",
+                        borderRadius: "9px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -208,20 +199,20 @@ export default function HomePage() {
                         flexShrink: 0,
                       }}
                     >
-                      {p.icon}
+                      <Icon style={{ width: "17px", height: "17px" }} />
                     </div>
                     <div>
                       <p
                         style={{
-                          fontSize: "0.8rem",
+                          fontSize: "0.78rem",
                           fontWeight: "600",
                           color: "#242424",
                         }}
                       >
-                        {p.title}
+                        {title}
                       </p>
-                      <p style={{ fontSize: "0.72rem", color: "#a0a0a0" }}>
-                        {p.desc}
+                      <p style={{ fontSize: "0.7rem", color: "#a0a0a0" }}>
+                        {desc}
                       </p>
                     </div>
                   </div>
@@ -229,15 +220,23 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Hero image card */}
-            <div style={{ position: "relative" }} className="hidden lg:block">
+            {/* Image */}
+            <div
+              style={{
+                position: "relative",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
               <div
                 style={{
                   backgroundColor: "#ffffff",
                   borderRadius: "20px",
                   border: "1px solid #ebebeb",
-                  boxShadow: "0 20px 60px rgb(0 0 0 / 0.08)",
+                  boxShadow: "0 16px 48px rgb(0 0 0 / 0.08)",
                   overflow: "hidden",
+                  width: "100%",
+                  maxWidth: "420px",
                   aspectRatio: "4/5",
                 }}
               >
@@ -248,69 +247,23 @@ export default function HomePage() {
                 />
               </div>
 
-              {/* Floating cards */}
+              {/* Floating badge */}
               <div
                 style={{
                   position: "absolute",
-                  bottom: "24px",
-                  left: "-24px",
-                  backgroundColor: "#ffffff",
-                  borderRadius: "14px",
-                  border: "1px solid #ebebeb",
-                  padding: "14px 18px",
-                  boxShadow: "0 8px 24px rgb(0 0 0 / 0.1)",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                }}
-              >
-                <div
-                  style={{
-                    width: "36px",
-                    height: "36px",
-                    backgroundColor: "#f4f7f4",
-                    borderRadius: "10px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Truck
-                    style={{ width: "18px", height: "18px", color: "#4f7d52" }}
-                  />
-                </div>
-                <div>
-                  <p
-                    style={{
-                      fontSize: "0.78rem",
-                      fontWeight: "600",
-                      color: "#242424",
-                    }}
-                  >
-                    Free Delivery
-                  </p>
-                  <p style={{ fontSize: "0.7rem", color: "#a0a0a0" }}>
-                    Orders over ₦50,000
-                  </p>
-                </div>
-              </div>
-
-              <div
-                style={{
-                  position: "absolute",
-                  top: "24px",
-                  right: "-16px",
+                  top: "16px",
+                  right: "0",
                   backgroundColor: "#4f7d52",
-                  borderRadius: "12px",
-                  padding: "10px 18px",
-                  boxShadow: "0 4px 16px rgb(79 125 82 / 0.3)",
+                  borderRadius: "10px",
+                  padding: "8px 16px",
+                  boxShadow: "0 4px 12px rgb(79 125 82 / 0.3)",
                 }}
               >
                 <p
                   style={{
                     color: "#fff",
                     fontWeight: "700",
-                    fontSize: "0.85rem",
+                    fontSize: "0.82rem",
                   }}
                 >
                   🔥 Hot Deal
@@ -321,53 +274,56 @@ export default function HomePage() {
               <div
                 style={{
                   position: "absolute",
-                  top: "50%",
-                  right: "-20px",
+                  bottom: "20px",
+                  left: "0",
                   backgroundColor: "#ffffff",
-                  borderRadius: "14px",
+                  borderRadius: "12px",
                   border: "1px solid #ebebeb",
-                  padding: "12px 16px",
-                  boxShadow: "0 8px 24px rgb(0 0 0 / 0.1)",
+                  padding: "10px 14px",
+                  boxShadow: "0 6px 20px rgb(0 0 0 / 0.08)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}
               >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "6px" }}
-                >
-                  <div style={{ display: "flex" }}>
-                    {["🧑", "👩", "👨"].map((e, i) => (
-                      <span
-                        key={i}
-                        style={{
-                          fontSize: "1.2rem",
-                          marginLeft: i > 0 ? "-6px" : 0,
-                        }}
-                      >
-                        {e}
-                      </span>
-                    ))}
-                  </div>
-                  <div>
-                    <p
+                <div style={{ display: "flex" }}>
+                  {["🧑", "👩", "👨"].map((e, i) => (
+                    <span
+                      key={i}
                       style={{
-                        fontSize: "0.75rem",
-                        fontWeight: "700",
-                        color: "#242424",
+                        fontSize: "1.1rem",
+                        marginLeft: i > 0 ? "-5px" : 0,
                       }}
                     >
-                      2K+
-                    </p>
-                    <p style={{ fontSize: "0.65rem", color: "#a0a0a0" }}>
-                      Happy Customers
-                    </p>
-                  </div>
-                  <Star
+                      {e}
+                    </span>
+                  ))}
+                </div>
+                <div>
+                  <p
                     style={{
-                      width: "14px",
-                      height: "14px",
-                      fill: "#fbbf24",
-                      color: "#fbbf24",
+                      fontSize: "0.72rem",
+                      fontWeight: "700",
+                      color: "#242424",
                     }}
-                  />
+                  >
+                    2K+ Happy Customers
+                  </p>
+                  <div
+                    style={{ display: "flex", gap: "1px", marginTop: "1px" }}
+                  >
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        style={{
+                          width: "10px",
+                          height: "10px",
+                          fill: "#fbbf24",
+                          color: "#fbbf24",
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -376,453 +332,314 @@ export default function HomePage() {
       </section>
 
       {/* ── Categories ── */}
-      <section
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 1.5rem 0",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "28px",
-          }}
-        >
-          <div>
-            <p
-              style={{
-                color: "#4f7d52",
-                fontSize: "0.78rem",
-                fontWeight: "600",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                marginBottom: "6px",
-              }}
-            >
-              Browse
-            </p>
-            <h2 className="section-title">Popular Categories</h2>
-          </div>
-          <Link
-            to="/category/smartphones"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "4px",
-              fontSize: "0.85rem",
-              color: "#4f7d52",
-              fontWeight: "500",
-              textDecoration: "none",
-              transition: "gap 0.2s",
-            }}
-          >
-            View All Categories{" "}
-            <ChevronRight style={{ width: "16px", height: "16px" }} />
-          </Link>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
-            gap: "16px",
-          }}
-        >
-          {CATEGORIES.map((cat) => (
+      <section style={{ ...S.section }}>
+        <div style={S.container}>
+          <div style={S.sectionHead}>
+            <div>
+              <p style={{ ...S.label, color: "#4f7d52" }}>Browse</p>
+              <h2 className="section-title">Popular Categories</h2>
+            </div>
             <Link
-              key={cat.slug}
-              to={`/category/${cat.slug}`}
+              to="/category/smartphones"
               style={{
                 display: "flex",
-                flexDirection: "column",
                 alignItems: "center",
-                gap: "10px",
-                padding: "20px 12px",
-                backgroundColor: "#ffffff",
-                border: "1px solid #ebebeb",
-                borderRadius: "12px",
+                gap: "4px",
+                fontSize: "0.82rem",
+                color: "#4f7d52",
+                fontWeight: "500",
                 textDecoration: "none",
-                transition: "all 0.2s",
-                textAlign: "center",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = "#a3c4a5";
-                e.currentTarget.style.backgroundColor = "#f4f7f4";
-                e.currentTarget.style.transform = "translateY(-2px)";
-                e.currentTarget.style.boxShadow =
-                  "0 4px 12px rgb(0 0 0 / 0.08)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "#ebebeb";
-                e.currentTarget.style.backgroundColor = "#ffffff";
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "none";
+                whiteSpace: "nowrap",
               }}
             >
-              <span style={{ fontSize: "2rem" }}>{cat.icon}</span>
-              <span
+              View All{" "}
+              <ChevronRight style={{ width: "15px", height: "15px" }} />
+            </Link>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+              gap: "12px",
+            }}
+          >
+            {CATEGORIES.map((cat) => (
+              <Link
+                key={cat.slug}
+                to={`/category/${cat.slug}`}
                 style={{
-                  fontSize: "0.78rem",
-                  color: "#3a3a3a",
-                  fontWeight: "500",
-                  lineHeight: "1.2",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "16px 10px",
+                  backgroundColor: "#fff",
+                  border: "1px solid #ebebeb",
+                  borderRadius: "12px",
+                  textDecoration: "none",
+                  transition: "all 0.2s",
+                  textAlign: "center",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "#a3c4a5";
+                  e.currentTarget.style.backgroundColor = "#f4f7f4";
+                  e.currentTarget.style.transform = "translateY(-2px)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "#ebebeb";
+                  e.currentTarget.style.backgroundColor = "#fff";
+                  e.currentTarget.style.transform = "none";
                 }}
               >
-                {cat.label}
-              </span>
-            </Link>
-          ))}
+                <span style={{ fontSize: "1.75rem" }}>{cat.icon}</span>
+                <span
+                  style={{
+                    fontSize: "0.72rem",
+                    color: "#3a3a3a",
+                    fontWeight: "500",
+                    lineHeight: "1.2",
+                  }}
+                >
+                  {cat.label}
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* ── Featured Products ── */}
-      <section
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 1.5rem 0",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "28px",
-          }}
-        >
-          <div>
-            <p
+      <section style={S.section}>
+        <div style={S.container}>
+          <div style={S.sectionHead}>
+            <div>
+              <p style={{ ...S.label, color: "#4f7d52" }}>Handpicked</p>
+              <h2 className="section-title">Best Selling Products</h2>
+            </div>
+            <Link
+              to="/category/smartphones"
+              className="btn-outline"
               style={{
-                color: "#4f7d52",
-                fontSize: "0.78rem",
-                fontWeight: "600",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                marginBottom: "6px",
+                fontSize: "0.75rem",
+                padding: "7px 16px",
+                whiteSpace: "nowrap",
               }}
             >
-              Handpicked
-            </p>
-            <h2 className="section-title">Best Selling Products</h2>
+              View All <ArrowRight style={{ width: "13px", height: "13px" }} />
+            </Link>
           </div>
-          <Link
-            to="/category/smartphones"
-            className="btn-outline"
-            style={{ fontSize: "0.75rem", padding: "8px 18px" }}
-          >
-            View All Products{" "}
-            <ArrowRight style={{ width: "14px", height: "14px" }} />
-          </Link>
+          {fl ? (
+            <ProductSkeleton count={8} />
+          ) : (
+            <div style={S.grid}>
+              {featured?.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
         </div>
-        {fl ? (
-          <ProductSkeleton count={8} />
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-              gap: "20px",
-            }}
-          >
-            {featured?.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </div>
-        )}
       </section>
 
       {/* ── Promo Banner ── */}
-      <section
-        style={{
-          maxWidth: "1280px",
-          margin: "64px auto 0",
-          padding: "0 1.5rem",
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: "#f4f7f4",
-            border: "1px solid #a3c4a5",
-            borderRadius: "20px",
-            padding: "60px 64px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: "32px",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
+      <section style={S.section}>
+        <div style={S.container}>
           <div
             style={{
-              position: "absolute",
-              right: "-40px",
-              top: "-40px",
-              width: "300px",
-              height: "300px",
-              borderRadius: "50%",
-              backgroundColor: "rgb(79 125 82 / 0.08)",
-              pointerEvents: "none",
-            }}
-          />
-          <div>
-            <p
-              style={{
-                color: "#4f7d52",
-                fontSize: "0.78rem",
-                fontWeight: "600",
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                marginBottom: "10px",
-              }}
-            >
-              Limited Time
-            </p>
-            <h2
-              style={{
-                fontFamily: "Playfair Display, Georgia, serif",
-                fontSize: "clamp(1.75rem, 3vw, 2.5rem)",
-                fontWeight: "700",
-                color: "#141414",
-                marginBottom: "12px",
-              }}
-            >
-              Up to 50% Off
-              <br />
-              Electronics
-            </h2>
-            <p
-              style={{
-                color: "#757575",
-                fontSize: "0.95rem",
-                maxWidth: "380px",
-              }}
-            >
-              Get the best deals on smartphones, laptops and accessories. Sale
-              ends Sunday.
-            </p>
-          </div>
-          <Link
-            to="/category/smartphones"
-            className="btn-primary"
-            style={{
-              fontSize: "0.8rem",
-              padding: "14px 32px",
-              borderRadius: "8px",
-              flexShrink: 0,
+              backgroundColor: "#f4f7f4",
+              border: "1px solid #a3c4a5",
+              borderRadius: "16px",
+              padding: "clamp(28px, 5vw, 56px) clamp(20px, 5vw, 56px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "24px",
             }}
           >
-            Shop Electronics{" "}
-            <ArrowRight style={{ width: "15px", height: "15px" }} />
-          </Link>
+            <div>
+              <p style={{ ...S.label, color: "#4f7d52", marginBottom: "8px" }}>
+                Limited Time
+              </p>
+              <h2
+                style={{
+                  fontFamily: "Playfair Display, Georgia, serif",
+                  fontSize: "clamp(1.5rem, 4vw, 2.5rem)",
+                  fontWeight: "700",
+                  color: "#141414",
+                  marginBottom: "10px",
+                }}
+              >
+                Up to 50% Off
+                <br />
+                Electronics
+              </h2>
+              <p
+                style={{
+                  color: "#757575",
+                  fontSize: "0.9rem",
+                  maxWidth: "360px",
+                }}
+              >
+                Best deals on smartphones, laptops and accessories. Sale ends
+                Sunday.
+              </p>
+            </div>
+            <Link
+              to="/category/smartphones"
+              className="btn-primary"
+              style={{ borderRadius: "8px", flexShrink: 0 }}
+            >
+              Shop Electronics{" "}
+              <ArrowRight style={{ width: "15px", height: "15px" }} />
+            </Link>
+          </div>
         </div>
       </section>
 
       {/* ── New Arrivals ── */}
-      <section
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 1.5rem 0",
-        }}
-      >
-        <div style={{ marginBottom: "28px" }}>
-          <p
-            style={{
-              color: "#f59e0b",
-              fontSize: "0.78rem",
-              fontWeight: "600",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              marginBottom: "6px",
-            }}
-          >
-            Just In
-          </p>
-          <h2 className="section-title">New Arrivals</h2>
-        </div>
-        {nl ? (
-          <ProductSkeleton count={4} />
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-              gap: "20px",
-            }}
-          >
-            {newArrivals?.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+      <section style={S.section}>
+        <div style={S.container}>
+          <div style={{ marginBottom: "24px" }}>
+            <p style={{ ...S.label, color: "#f59e0b" }}>Just In</p>
+            <h2 className="section-title">New Arrivals</h2>
           </div>
-        )}
+          {nl ? (
+            <ProductSkeleton count={4} />
+          ) : (
+            <div style={S.grid}>
+              {newArrivals?.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* ── Best Sellers ── */}
-      <section
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 1.5rem 0",
-        }}
-      >
-        <div style={{ marginBottom: "28px" }}>
-          <p
-            style={{
-              color: "#ef4444",
-              fontSize: "0.78rem",
-              fontWeight: "600",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              marginBottom: "6px",
-            }}
-          >
-            🔥 Trending
-          </p>
-          <h2 className="section-title">Best Sellers</h2>
-        </div>
-        {bl ? (
-          <ProductSkeleton count={4} />
-        ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-              gap: "20px",
-            }}
-          >
-            {bestSellers?.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+      <section style={S.section}>
+        <div style={S.container}>
+          <div style={{ marginBottom: "24px" }}>
+            <p style={{ ...S.label, color: "#ef4444" }}>🔥 Trending</p>
+            <h2 className="section-title">Best Sellers</h2>
           </div>
-        )}
+          {bl ? (
+            <ProductSkeleton count={4} />
+          ) : (
+            <div style={S.grid}>
+              {bestSellers?.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          )}
+        </div>
       </section>
 
       {/* ── Testimonials ── */}
-      <section
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 1.5rem 80px",
-        }}
-      >
-        <div style={{ textAlign: "center", marginBottom: "40px" }}>
-          <p
+      <section style={{ ...S.section, paddingBottom: "72px" }}>
+        <div style={S.container}>
+          <div style={{ textAlign: "center", marginBottom: "36px" }}>
+            <p style={{ ...S.label, color: "#4f7d52" }}>Reviews</p>
+            <h2 className="section-title">What Customers Say</h2>
+          </div>
+          <div
             style={{
-              color: "#4f7d52",
-              fontSize: "0.78rem",
-              fontWeight: "600",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              marginBottom: "8px",
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
+              gap: "16px",
             }}
           >
-            Reviews
-          </p>
-          <h2 className="section-title">What Customers Say</h2>
-        </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "20px",
-          }}
-        >
-          {[
-            {
-              name: "Amara O.",
-              review:
-                "Fastest delivery I ever experienced. My laptop arrived in 2 days!",
-              rating: 5,
-              initials: "AO",
-            },
-            {
-              name: "Chidi N.",
-              review:
-                "Great product quality. The skincare items are exactly as described.",
-              rating: 5,
-              initials: "CN",
-            },
-            {
-              name: "Fatima B.",
-              review:
-                "Excellent customer service. Returns process was seamless and quick.",
-              rating: 4,
-              initials: "FB",
-            },
-          ].map((t, i) => (
-            <div
-              key={i}
-              style={{
-                backgroundColor: "#ffffff",
-                border: "1px solid #ebebeb",
-                borderRadius: "16px",
-                padding: "24px",
-                boxShadow: "0 2px 8px rgb(0 0 0 / 0.05)",
-              }}
-            >
+            {[
+              {
+                name: "Amara O.",
+                review:
+                  "Fastest delivery I experienced. My laptop arrived in 2 days!",
+                rating: 5,
+                initials: "AO",
+              },
+              {
+                name: "Chidi N.",
+                review:
+                  "Great quality. The skincare items are exactly as described.",
+                rating: 5,
+                initials: "CN",
+              },
+              {
+                name: "Fatima B.",
+                review:
+                  "Excellent service. Returns process was seamless and quick.",
+                rating: 4,
+                initials: "FB",
+              },
+            ].map((t, i) => (
               <div
-                style={{ display: "flex", gap: "2px", marginBottom: "14px" }}
-              >
-                {Array.from({ length: t.rating }).map((_, j) => (
-                  <Star
-                    key={j}
-                    style={{
-                      width: "15px",
-                      height: "15px",
-                      fill: "#fbbf24",
-                      color: "#fbbf24",
-                    }}
-                  />
-                ))}
-              </div>
-              <p
+                key={i}
                 style={{
-                  color: "#555555",
-                  fontSize: "0.875rem",
-                  lineHeight: "1.7",
-                  marginBottom: "16px",
+                  backgroundColor: "#fff",
+                  border: "1px solid #ebebeb",
+                  borderRadius: "14px",
+                  padding: "22px",
+                  boxShadow: "0 2px 8px rgb(0 0 0 / 0.05)",
                 }}
               >
-                "{t.review}"
-              </p>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "10px" }}
-              >
                 <div
-                  style={{
-                    width: "38px",
-                    height: "38px",
-                    backgroundColor: "#f4f7f4",
-                    border: "1px solid #a3c4a5",
-                    borderRadius: "50%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: "#4f7d52",
-                    fontWeight: "700",
-                    fontSize: "0.8rem",
-                  }}
+                  style={{ display: "flex", gap: "2px", marginBottom: "12px" }}
                 >
-                  {t.initials}
+                  {Array.from({ length: t.rating }).map((_, j) => (
+                    <Star
+                      key={j}
+                      style={{
+                        width: "14px",
+                        height: "14px",
+                        fill: "#fbbf24",
+                        color: "#fbbf24",
+                      }}
+                    />
+                  ))}
                 </div>
-                <span
+                <p
                   style={{
-                    fontSize: "0.875rem",
-                    fontWeight: "600",
-                    color: "#242424",
+                    color: "#555",
+                    fontSize: "0.85rem",
+                    lineHeight: "1.7",
+                    marginBottom: "14px",
                   }}
                 >
-                  {t.name}
-                </span>
+                  "{t.review}"
+                </p>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "9px" }}
+                >
+                  <div
+                    style={{
+                      width: "36px",
+                      height: "36px",
+                      backgroundColor: "#f4f7f4",
+                      border: "1px solid #a3c4a5",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: "#4f7d52",
+                      fontWeight: "700",
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    {t.initials}
+                  </div>
+                  <span
+                    style={{
+                      fontSize: "0.85rem",
+                      fontWeight: "600",
+                      color: "#242424",
+                    }}
+                  >
+                    {t.name}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
     </div>

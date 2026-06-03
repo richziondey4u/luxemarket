@@ -3,44 +3,47 @@ export default function ProductSkeleton({ count = 8 }) {
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-        gap: "20px",
+        gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 200px), 1fr))",
+        gap: "16px",
       }}
     >
       {Array.from({ length: count }).map((_, i) => (
         <div
           key={i}
           style={{
-            backgroundColor: "#ffffff",
+            backgroundColor: "#fff",
             border: "1px solid #ebebeb",
-            borderRadius: "14px",
+            borderRadius: "12px",
             overflow: "hidden",
           }}
         >
-          <div style={{ aspectRatio: "1" }} className="shimmer-bg" />
+          <div
+            style={{ aspectRatio: "1", width: "100%" }}
+            className="shimmer-bg"
+          />
           <div
             style={{
-              padding: "14px 16px",
+              padding: "12px 14px",
               display: "flex",
               flexDirection: "column",
-              gap: "10px",
+              gap: "8px",
             }}
           >
             <div
-              style={{ height: "10px", width: "33%" }}
-              className="shimmer-bg rounded"
+              style={{ height: "9px", width: "30%" }}
+              className="shimmer-bg"
             />
             <div
-              style={{ height: "14px", width: "100%" }}
-              className="shimmer-bg rounded"
+              style={{ height: "13px", width: "90%" }}
+              className="shimmer-bg"
             />
             <div
-              style={{ height: "10px", width: "60%" }}
-              className="shimmer-bg rounded"
+              style={{ height: "9px", width: "55%" }}
+              className="shimmer-bg"
             />
             <div
-              style={{ height: "18px", width: "45%" }}
-              className="shimmer-bg rounded"
+              style={{ height: "16px", width: "40%" }}
+              className="shimmer-bg"
             />
           </div>
         </div>

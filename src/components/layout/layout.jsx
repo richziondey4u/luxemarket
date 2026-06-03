@@ -5,7 +5,6 @@ import Footer from "./Footer.jsx";
 
 export default function Layout() {
   const { pathname } = useLocation();
-
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [pathname]);
@@ -20,7 +19,14 @@ export default function Layout() {
       }}
     >
       <Navbar />
-      <main style={{ flex: 1, backgroundColor: "#ffffff" }}>
+      <main
+        style={{
+          flex: 1,
+          backgroundColor: "#ffffff",
+          width: "100%",
+          overflowX: "hidden",
+        }}
+      >
         <Outlet />
       </main>
       <Footer />

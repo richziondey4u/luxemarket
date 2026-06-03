@@ -1,169 +1,563 @@
-import { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight } from 'lucide-react'
-import { useAuth } from '../context/AuthContext.jsx'
-import { cn } from '../lib/utils.js'
+import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight } from "lucide-react";
+import { useAuth } from "../context/AuthContext.jsx";
 
 export default function RegisterPage() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { register, isAuthenticated } = useAuth()
-  const from = location.state?.from?.pathname || '/'
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { register, isAuthenticated } = useAuth();
+  const from = location.state?.from?.pathname || "/";
 
-  const [form,     setForm]     = useState({ name: '', email: '', phone: '', password: '', confirm: '' })
-  const [showPass, setShowPass] = useState(false)
-  const [loading,  setLoading]  = useState(false)
-  const [error,    setError]    = useState('')
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirm: "",
+  });
+  const [showPass, setShowPass] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  if (isAuthenticated) { navigate(from, { replace: true }); return null }
-
-  const set = (f) => (e) => setForm(v => ({ ...v, [f]: e.target.value }))
+  if (isAuthenticated) {
+    navigate(from, { replace: true });
+    return null;
+  }
+  const set = (f) => (e) => setForm((v) => ({ ...v, [f]: e.target.value }));
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    if (form.password !== form.confirm) { setError('Passwords do not match'); return }
-    if (form.password.length < 6)       { setError('Password must be at least 6 characters'); return }
-    setLoading(true)
-    try {
-      await register({ name: form.name, email: form.email, password: form.password, phone: form.phone })
-      navigate(from, { replace: true })
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+    e.preventDefault();
+    setError("");
+    if (form.password !== form.confirm) {
+      setError("Passwords do not match");
+      return;
     }
-  }
+    if (form.password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+    setLoading(true);
+    try {
+      await register({
+        name: form.name,
+        email: form.email,
+        password: form.password,
+        phone: form.phone,
+      });
+      navigate(from, { replace: true });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const strength = form.password.length >= 10 ? 4 : form.password.length >= 8 ? 3 : form.password.length >= 6 ? 2 : form.password.length > 0 ? 1 : 0
-  const strengthColor = ['', 'bg-red-500', 'bg-orange-500', 'bg-amber-500', 'bg-brand-500']
-  const strengthLabel = ['', 'Too short', 'Weak', 'Good', 'Strong']
+  const strength =
+    form.password.length >= 10
+      ? 4
+      : form.password.length >= 8
+        ? 3
+        : form.password.length >= 6
+          ? 2
+          : form.password.length > 0
+            ? 1
+            : 0;
+  const strengthColors = [
+    "#e0e0e0",
+    "#ef4444",
+    "#f97316",
+    "#f59e0b",
+    "#4f7d52",
+  ];
+  const strengthLabels = ["", "Too short", "Weak", "Good", "Strong"];
 
   return (
-    <div className="min-h-[90vh] flex items-center justify-center px-4 py-12">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-brand-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="w-full max-w-md relative">
-        <div className="card-dark rounded-3xl p-8 border border-white/10 shadow-2xl">
-
-          <div className="text-center mb-8">
-            <Link to="/" className="inline-flex items-center gap-2 mb-6">
-              <div className="w-9 h-9 bg-gradient-to-br from-brand-400 to-brand-600 rounded-xl flex items-center justify-center shadow-glow">
-                <span className="text-slate-950 font-display font-bold">L</span>
+    <div
+      style={{
+        minHeight: "90vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "32px 16px",
+        backgroundColor: "#f9f9f9",
+      }}
+    >
+      <div style={{ width: "100%", maxWidth: "460px" }}>
+        <div
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "16px",
+            padding: "clamp(24px, 5vw, 36px)",
+            border: "1px solid #ebebeb",
+            boxShadow: "0 4px 24px rgb(0 0 0 / 0.07)",
+          }}
+        >
+          <div style={{ textAlign: "center", marginBottom: "24px" }}>
+            <Link
+              to="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                textDecoration: "none",
+                marginBottom: "20px",
+              }}
+            >
+              <div
+                style={{
+                  width: "36px",
+                  height: "36px",
+                  backgroundColor: "#4f7d52",
+                  borderRadius: "9px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <span
+                  style={{
+                    color: "#fff",
+                    fontFamily: "Georgia, serif",
+                    fontWeight: "700",
+                    fontSize: "17px",
+                  }}
+                >
+                  L
+                </span>
               </div>
-              <span className="font-display font-bold text-white text-2xl">Luxe<span className="text-brand-400">Market</span></span>
+              <span
+                style={{
+                  fontFamily: "Georgia, serif",
+                  fontWeight: "700",
+                  color: "#141414",
+                  fontSize: "1.2rem",
+                }}
+              >
+                Luxe<span style={{ color: "#4f7d52" }}>Market</span>
+              </span>
             </Link>
-            <h1 className="font-display text-3xl font-bold text-white mb-1">Create account</h1>
-            <p className="text-slate-500 text-sm">Join thousands of happy shoppers</p>
+            <h1
+              style={{
+                fontFamily: "Georgia, serif",
+                fontSize: "1.6rem",
+                fontWeight: "700",
+                color: "#141414",
+                marginBottom: "6px",
+              }}
+            >
+              Create account
+            </h1>
+            <p style={{ color: "#757575", fontSize: "0.875rem" }}>
+              Join thousands of happy shoppers
+            </p>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-6">
-            {['Free shipping', 'Easy returns', 'Secure pay'].map(b => (
-              <div key={b} className="bg-brand-500/10 border border-brand-500/20 rounded-xl p-2 text-center">
-                <p className="text-xs text-brand-400 font-medium">{b}</p>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gap: "8px",
+              marginBottom: "20px",
+            }}
+          >
+            {["Free shipping", "Easy returns", "Secure pay"].map((b) => (
+              <div
+                key={b}
+                style={{
+                  backgroundColor: "#f4f7f4",
+                  border: "1px solid #a3c4a5",
+                  borderRadius: "8px",
+                  padding: "8px",
+                  textAlign: "center",
+                }}
+              >
+                <p
+                  style={{
+                    fontSize: "0.7rem",
+                    color: "#4f7d52",
+                    fontWeight: "600",
+                  }}
+                >
+                  {b}
+                </p>
               </div>
             ))}
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mb-4 text-sm text-red-400 text-center">
+            <div
+              style={{
+                backgroundColor: "#fff1f2",
+                border: "1px solid #fecdd3",
+                borderRadius: "8px",
+                padding: "10px 14px",
+                marginBottom: "14px",
+                fontSize: "0.82rem",
+                color: "#be123c",
+                textAlign: "center",
+              }}
+            >
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+          >
             {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Full Name <span className="text-red-400">*</span></label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input type="text" value={form.name} onChange={set('name')} placeholder="Jane Doe" required className="input-field pl-10" />
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.8rem",
+                  fontWeight: "600",
+                  color: "#3a3a3a",
+                  marginBottom: "6px",
+                }}
+              >
+                Full Name <span style={{ color: "#ef4444" }}>*</span>
+              </label>
+              <div style={{ position: "relative" }}>
+                <User
+                  style={{
+                    position: "absolute",
+                    left: "12px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: "15px",
+                    height: "15px",
+                    color: "#a0a0a0",
+                  }}
+                />
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={set("name")}
+                  placeholder="Jane Doe"
+                  required
+                  className="input-field"
+                  style={{ paddingLeft: "38px", fontSize: "0.875rem" }}
+                />
               </div>
             </div>
-
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Email <span className="text-red-400">*</span></label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input type="email" value={form.email} onChange={set('email')} placeholder="you@example.com" required className="input-field pl-10" />
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.8rem",
+                  fontWeight: "600",
+                  color: "#3a3a3a",
+                  marginBottom: "6px",
+                }}
+              >
+                Email <span style={{ color: "#ef4444" }}>*</span>
+              </label>
+              <div style={{ position: "relative" }}>
+                <Mail
+                  style={{
+                    position: "absolute",
+                    left: "12px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: "15px",
+                    height: "15px",
+                    color: "#a0a0a0",
+                  }}
+                />
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={set("email")}
+                  placeholder="you@example.com"
+                  required
+                  className="input-field"
+                  style={{ paddingLeft: "38px", fontSize: "0.875rem" }}
+                />
               </div>
             </div>
-
             {/* Phone */}
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Phone (optional)</label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                <input type="tel" value={form.phone} onChange={set('phone')} placeholder="+234 800 000 0000" className="input-field pl-10" />
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "0.8rem",
+                  fontWeight: "600",
+                  color: "#3a3a3a",
+                  marginBottom: "6px",
+                }}
+              >
+                Phone (optional)
+              </label>
+              <div style={{ position: "relative" }}>
+                <Phone
+                  style={{
+                    position: "absolute",
+                    left: "12px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: "15px",
+                    height: "15px",
+                    color: "#a0a0a0",
+                  }}
+                />
+                <input
+                  type="tel"
+                  value={form.phone}
+                  onChange={set("phone")}
+                  placeholder="+234 800 000 0000"
+                  className="input-field"
+                  style={{ paddingLeft: "38px", fontSize: "0.875rem" }}
+                />
               </div>
             </div>
-
             {/* Passwords */}
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fit, minmax(min(100%, 180px), 1fr))",
+                gap: "12px",
+              }}
+            >
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Password <span className="text-red-400">*</span></label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <input type={showPass ? 'text' : 'password'} value={form.password} onChange={set('password')}
-                    placeholder="Min 6 chars" required className="input-field pl-10 pr-10" />
-                  <button type="button" onClick={() => setShowPass(s => !s)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white">
-                    {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.8rem",
+                    fontWeight: "600",
+                    color: "#3a3a3a",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Password <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <div style={{ position: "relative" }}>
+                  <Lock
+                    style={{
+                      position: "absolute",
+                      left: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: "15px",
+                      height: "15px",
+                      color: "#a0a0a0",
+                    }}
+                  />
+                  <input
+                    type={showPass ? "text" : "password"}
+                    value={form.password}
+                    onChange={set("password")}
+                    placeholder="Min 6 chars"
+                    required
+                    className="input-field"
+                    style={{
+                      paddingLeft: "38px",
+                      paddingRight: "38px",
+                      fontSize: "0.875rem",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass((s) => !s)}
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#a0a0a0",
+                      display: "flex",
+                    }}
+                  >
+                    {showPass ? (
+                      <EyeOff style={{ width: "15px", height: "15px" }} />
+                    ) : (
+                      <Eye style={{ width: "15px", height: "15px" }} />
+                    )}
                   </button>
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-slate-300 mb-1.5">Confirm <span className="text-red-400">*</span></label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                  <input type={showPass ? 'text' : 'password'} value={form.confirm} onChange={set('confirm')}
-                    placeholder="Repeat password" required
-                    className={cn('input-field pl-10', form.confirm && form.confirm !== form.password && 'ring-1 ring-red-500')} />
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "0.8rem",
+                    fontWeight: "600",
+                    color: "#3a3a3a",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Confirm <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <div style={{ position: "relative" }}>
+                  <Lock
+                    style={{
+                      position: "absolute",
+                      left: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: "15px",
+                      height: "15px",
+                      color: "#a0a0a0",
+                    }}
+                  />
+                  <input
+                    type={showPass ? "text" : "password"}
+                    value={form.confirm}
+                    onChange={set("confirm")}
+                    placeholder="Repeat"
+                    required
+                    className="input-field"
+                    style={{
+                      paddingLeft: "38px",
+                      fontSize: "0.875rem",
+                      borderColor:
+                        form.confirm && form.confirm !== form.password
+                          ? "#fecdd3"
+                          : undefined,
+                    }}
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Strength bar */}
+            {/* Strength */}
             {form.password && (
-              <div className="space-y-1">
-                <div className="flex gap-1">
-                  {[1,2,3,4].map(i => (
-                    <div key={i} className={cn('h-1 flex-1 rounded-full transition-colors', i <= strength ? strengthColor[strength] : 'bg-white/10')} />
+              <div>
+                <div
+                  style={{ display: "flex", gap: "4px", marginBottom: "4px" }}
+                >
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      style={{
+                        height: "3px",
+                        flex: 1,
+                        borderRadius: "99px",
+                        backgroundColor:
+                          i <= strength ? strengthColors[strength] : "#e0e0e0",
+                        transition: "background-color 0.2s",
+                      }}
+                    />
                   ))}
                 </div>
-                <p className="text-xs text-slate-500">{strengthLabel[strength]}</p>
+                <p style={{ fontSize: "0.72rem", color: "#757575" }}>
+                  {strengthLabels[strength]}
+                </p>
               </div>
             )}
 
-            <label className="flex items-start gap-2 cursor-pointer pt-1">
-              <input type="checkbox" required className="w-4 h-4 mt-0.5 accent-brand-500 flex-shrink-0" />
-              <span className="text-xs text-slate-500">
-                I agree to the <a href="#" className="text-brand-400 hover:underline">Terms</a> and{' '}
-                <a href="#" className="text-brand-400 hover:underline">Privacy Policy</a>
+            <label
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "8px",
+                cursor: "pointer",
+              }}
+            >
+              <input
+                type="checkbox"
+                required
+                style={{
+                  width: "14px",
+                  height: "14px",
+                  marginTop: "2px",
+                  accentColor: "#4f7d52",
+                  flexShrink: 0,
+                }}
+              />
+              <span
+                style={{
+                  fontSize: "0.75rem",
+                  color: "#757575",
+                  lineHeight: "1.5",
+                }}
+              >
+                I agree to the{" "}
+                <a href="#" style={{ color: "#4f7d52" }}>
+                  Terms
+                </a>{" "}
+                and{" "}
+                <a href="#" style={{ color: "#4f7d52" }}>
+                  Privacy Policy
+                </a>
               </span>
             </label>
 
-            <button type="submit" disabled={loading}
-              className="btn-primary w-full gap-2 py-3.5 rounded-2xl text-base">
-              {loading
-                ? <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                : <>Create Account <ArrowRight className="w-4 h-4" /></>
-              }
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary"
+              style={{
+                width: "100%",
+                borderRadius: "8px",
+                fontSize: "0.875rem",
+                padding: "12px",
+                justifyContent: "center",
+                marginTop: "4px",
+              }}
+            >
+              {loading ? (
+                <div
+                  style={{
+                    width: "18px",
+                    height: "18px",
+                    border: "2px solid #fff",
+                    borderTopColor: "transparent",
+                    borderRadius: "50%",
+                    animation: "spin 0.8s linear infinite",
+                  }}
+                />
+              ) : (
+                <>
+                  Create Account{" "}
+                  <ArrowRight style={{ width: "16px", height: "16px" }} />
+                </>
+              )}
             </button>
           </form>
 
-          <p className="text-center text-sm text-slate-500 mt-6">
-            Already have an account?{' '}
-            <Link to="/login" state={location.state} className="text-brand-400 hover:underline font-medium">Sign in</Link>
+          <p
+            style={{
+              textAlign: "center",
+              fontSize: "0.82rem",
+              color: "#757575",
+              marginTop: "18px",
+            }}
+          >
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              state={location.state}
+              style={{
+                color: "#4f7d52",
+                fontWeight: "600",
+                textDecoration: "none",
+              }}
+            >
+              Sign in
+            </Link>
           </p>
         </div>
-        <p className="text-center mt-4">
-          <Link to="/" className="text-sm text-slate-600 hover:text-slate-400">← Back to store</Link>
+        <p style={{ textAlign: "center", marginTop: "14px" }}>
+          <Link
+            to="/"
+            style={{
+              fontSize: "0.82rem",
+              color: "#a0a0a0",
+              textDecoration: "none",
+            }}
+          >
+            ← Back to store
+          </Link>
         </p>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
-  )
+  );
 }

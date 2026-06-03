@@ -7,122 +7,129 @@ export default function CartPage() {
   const { items, removeItem, updateQuantity, subtotal, shipping, tax, total, isEmpty } = useCart()
 
   if (isEmpty) return (
-    <div className="min-h-[70vh] flex flex-col items-center justify-center text-center px-4">
-      <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10">
-        <ShoppingBag className="w-12 h-12 text-slate-600" />
+    <div style={{ minHeight: '70vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '32px 16px', backgroundColor: '#fff' }}>
+      <div style={{ width: '80px', height: '80px', backgroundColor: '#f3f3f3', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '20px', border: '1px solid #ebebeb' }}>
+        <ShoppingBag style={{ width: '36px', height: '36px', color: '#c8c8c8' }} />
       </div>
-      <h2 className="font-display text-3xl font-bold text-white mb-3">Your cart is empty</h2>
-      <p className="text-slate-500 mb-8 max-w-sm">Looks like you haven't added anything yet. Start shopping!</p>
-      <Link to="/" className="btn-primary gap-2 text-base px-8 py-3.5 rounded-2xl">
-        Browse Products <ArrowRight className="w-4 h-4" />
+      <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.75rem', fontWeight: '700', color: '#141414', marginBottom: '10px' }}>Your cart is empty</h2>
+      <p style={{ color: '#757575', marginBottom: '28px', maxWidth: '320px', fontSize: '0.9rem' }}>You haven't added anything yet. Start shopping!</p>
+      <Link to="/" className="btn-primary" style={{ borderRadius: '8px' }}>
+        Browse Products <ArrowRight style={{ width: '16px', height: '16px' }} />
       </Link>
     </div>
   )
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <h1 className="font-display text-4xl font-bold text-white mb-8">
-        Shopping Cart
-        <span className="text-slate-600 text-2xl ml-3 font-normal">({items.length} items)</span>
-      </h1>
+    <div style={{ backgroundColor: '#fff', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '28px 16px 64px' }}>
+        <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: '700', color: '#141414', marginBottom: '28px' }}>
+          Shopping Cart <span style={{ fontSize: '1rem', color: '#a0a0a0', fontFamily: 'DM Sans, sans-serif', fontWeight: '400' }}>({items.length} items)</span>
+        </h1>
 
-      <div className="grid lg:grid-cols-3 gap-8">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 340px), 1fr))', gap: '24px', alignItems: 'flex-start' }}>
 
-        {/* Items */}
-        <div className="lg:col-span-2 space-y-4">
-          {items.map(item => (
-            <div key={item.key} className="card-dark rounded-2xl p-5 border border-white/8 flex gap-4 hover:border-white/15 transition-colors">
-              <Link to={`/product/${item.id}`} className="flex-shrink-0">
-                <img src={item.product.thumbnail} alt={item.product.title} className="w-24 h-24 rounded-xl object-cover bg-slate-800" />
-              </Link>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs text-slate-500 mb-1 uppercase tracking-wide">{item.product.brand || item.product.category}</p>
-                    <Link to={`/product/${item.id}`}>
-                      <h3 className="text-sm font-medium text-slate-200 hover:text-brand-400 transition-colors leading-snug">{item.product.title}</h3>
-                    </Link>
+          {/* Items */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {items.map(item => (
+              <div key={item.key} style={{
+                backgroundColor: '#fff', border: '1px solid #ebebeb', borderRadius: '12px',
+                padding: '14px', display: 'flex', gap: '12px', transition: 'border-color 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#c8c8c8'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#ebebeb'}
+              >
+                <Link to={`/product/${item.id}`} style={{ flexShrink: 0 }}>
+                  <img src={item.product.thumbnail} alt={item.product.title}
+                    style={{ width: '80px', height: '80px', borderRadius: '8px', objectFit: 'cover', backgroundColor: '#f7f7f7' }} />
+                </Link>
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: '0.68rem', color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>{item.product.brand || item.product.category}</p>
+                      <Link to={`/product/${item.id}`} style={{ textDecoration: 'none' }}>
+                        <p style={{ fontSize: '0.85rem', fontWeight: '500', color: '#242424', lineHeight: '1.3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.product.title}</p>
+                      </Link>
+                    </div>
+                    <button onClick={() => removeItem(item.key)} style={{
+                      padding: '5px', color: '#c8c8c8', background: 'none', border: 'none',
+                      cursor: 'pointer', borderRadius: '6px', flexShrink: 0, display: 'flex',
+                      transition: 'color 0.15s, background-color 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.backgroundColor = '#fff1f2' }}
+                    onMouseLeave={e => { e.currentTarget.style.color = '#c8c8c8'; e.currentTarget.style.backgroundColor = 'transparent' }}
+                    ><Trash2 style={{ width: '15px', height: '15px' }} /></button>
                   </div>
-                  <button onClick={() => removeItem(item.key)}
-                    className="p-1.5 text-slate-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all flex-shrink-0">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between mt-4">
-                  <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                    <button onClick={() => updateQuantity(item.key, item.quantity - 1)}
-                      className="p-2 text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
-                      <Minus className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="px-4 text-white font-semibold text-sm">{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item.key, item.quantity + 1)}
-                      className="p-2 text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <div className="text-right">
-                    <p className="price-tag text-base">{formatPrice(item.product.price * item.quantity)}</p>
-                    {item.quantity > 1 && <p className="text-xs text-slate-500">{formatPrice(item.product.price)} each</p>}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e0e0e0', borderRadius: '7px', overflow: 'hidden' }}>
+                      <button onClick={() => updateQuantity(item.key, item.quantity - 1)} style={{ padding: '5px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#555', display: 'flex' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f3f3'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                      ><Minus style={{ width: '13px', height: '13px' }} /></button>
+                      <span style={{ padding: '0 12px', fontWeight: '600', color: '#141414', fontSize: '0.85rem' }}>{item.quantity}</span>
+                      <button onClick={() => updateQuantity(item.key, item.quantity + 1)} style={{ padding: '5px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#555', display: 'flex' }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f3f3'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                      ><Plus style={{ width: '13px', height: '13px' }} /></button>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <p style={{ fontWeight: '700', color: '#141414', fontSize: '0.95rem' }}>{formatPrice(item.product.price * item.quantity)}</p>
+                      {item.quantity > 1 && <p style={{ fontSize: '0.7rem', color: '#a0a0a0' }}>{formatPrice(item.product.price)} each</p>}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-
-          <Link to="/" className="flex items-center gap-2 text-sm text-slate-500 hover:text-brand-400 transition-colors pt-2">
-            ← Continue Shopping
-          </Link>
-        </div>
-
-        {/* Summary */}
-        <div className="space-y-4">
-          <div className="card-dark rounded-2xl p-5 border border-white/8">
-            <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-              <Tag className="w-4 h-4 text-brand-400" /> Promo Code
-            </h3>
-            <div className="flex gap-2">
-              <input type="text" placeholder="Enter code" className="input-field text-sm py-2" />
-              <button className="btn-outline text-sm py-2 px-4 whitespace-nowrap">Apply</button>
-            </div>
+            ))}
+            <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', color: '#757575', textDecoration: 'none', padding: '8px 0', transition: 'color 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#4f7d52'}
+              onMouseLeave={e => e.currentTarget.style.color = '#757575'}
+            >← Continue Shopping</Link>
           </div>
 
-          <div className="card-dark rounded-2xl p-6 border border-white/8 sticky top-24">
-            <h3 className="font-display text-xl font-bold text-white mb-5">Order Summary</h3>
-            <div className="space-y-3 mb-5">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Subtotal</span>
-                <span className="text-white">{formatPrice(subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Shipping</span>
-                <span className={shipping === 0 ? 'text-brand-400 font-medium' : 'text-white'}>
-                  {shipping === 0 ? 'FREE' : formatPrice(shipping)}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-400">Tax (7.5%)</span>
-                <span className="text-white">{formatPrice(tax)}</span>
-              </div>
-              {shipping > 0 && (
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
-                  <p className="text-xs text-amber-400">Add {formatPrice(100 - subtotal)} more for free shipping!</p>
-                </div>
-              )}
-            </div>
-            <div className="border-t border-white/10 pt-4 mb-5">
-              <div className="flex justify-between">
-                <span className="font-semibold text-white">Total</span>
-                <span className="font-display text-2xl font-bold text-brand-400">{formatPrice(total)}</span>
+          {/* Summary */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', position: 'sticky', top: '80px' }}>
+            {/* Promo */}
+            <div style={{ backgroundColor: '#fff', border: '1px solid #ebebeb', borderRadius: '12px', padding: '16px' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '0.85rem', fontWeight: '600', color: '#3a3a3a', marginBottom: '10px', fontFamily: 'DM Sans, sans-serif' }}>
+                <Tag style={{ width: '15px', height: '15px', color: '#4f7d52' }} /> Promo Code
+              </h3>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input type="text" placeholder="Enter code" className="input-field" style={{ fontSize: '0.85rem', padding: '9px 12px' }} />
+                <button className="btn-outline" style={{ fontSize: '0.78rem', padding: '9px 16px', whiteSpace: 'nowrap' }}>Apply</button>
               </div>
             </div>
-            <Link to="/checkout" className="btn-primary w-full gap-2 py-3.5 rounded-2xl text-base">
-              Proceed to Checkout <ArrowRight className="w-4 h-4" />
-            </Link>
-            <div className="flex items-center justify-center gap-3 mt-4">
-              {['Paystack', 'Visa', 'MC'].map(p => (
-                <span key={p} className="text-xs text-slate-600 font-mono bg-white/5 px-2 py-1 rounded border border-white/8">{p}</span>
-              ))}
+
+            {/* Order summary */}
+            <div style={{ backgroundColor: '#fff', border: '1px solid #ebebeb', borderRadius: '12px', padding: '20px' }}>
+              <h3 style={{ fontFamily: 'Georgia, serif', fontSize: '1.1rem', fontWeight: '700', color: '#141414', marginBottom: '16px' }}>Order Summary</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+                {[
+                  ['Subtotal', formatPrice(subtotal)],
+                  ['Shipping', shipping === 0 ? 'FREE' : formatPrice(shipping)],
+                  ['Tax (7.5%)', formatPrice(tax)],
+                ].map(([l, v]) => (
+                  <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
+                    <span style={{ color: '#757575' }}>{l}</span>
+                    <span style={{ color: v === 'FREE' ? '#4f7d52' : '#242424', fontWeight: v === 'FREE' ? '600' : '400' }}>{v}</span>
+                  </div>
+                ))}
+                {shipping > 0 && (
+                  <div style={{ backgroundColor: '#fefce8', border: '1px solid #fef08a', borderRadius: '7px', padding: '8px 10px' }}>
+                    <p style={{ fontSize: '0.75rem', color: '#a16207' }}>Add {formatPrice(100 - subtotal)} more for free shipping!</p>
+                  </div>
+                )}
+              </div>
+              <div style={{ borderTop: '1px solid #ebebeb', paddingTop: '14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <span style={{ fontWeight: '600', color: '#141414', fontSize: '0.95rem' }}>Total</span>
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '1.3rem', fontWeight: '700', color: '#141414' }}>{formatPrice(total)}</span>
+              </div>
+              <Link to="/checkout" className="btn-primary" style={{ width: '100%', borderRadius: '8px', justifyContent: 'center', fontSize: '0.875rem' }}>
+                Proceed to Checkout <ArrowRight style={{ width: '16px', height: '16px' }} />
+              </Link>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginTop: '12px' }}>
+                {['Paystack', 'Visa', 'MC'].map(p => (
+                  <span key={p} style={{ fontSize: '0.68rem', color: '#a0a0a0', fontFamily: 'monospace', backgroundColor: '#f3f3f3', padding: '2px 7px', borderRadius: '4px', border: '1px solid #e0e0e0' }}>{p}</span>
+                ))}
+              </div>
             </div>
           </div>
         </div>

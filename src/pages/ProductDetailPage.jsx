@@ -1,21 +1,19 @@
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
-  ChevronRight, ChevronLeft, Star, ShoppingCart, Heart,
-  Shield, Truck, RotateCcw, Share2, Minus, Plus,
+  ChevronRight, ChevronLeft, Star, ShoppingCart,
+  Heart, Shield, Truck, RotateCcw, Share2, Minus, Plus,
 } from 'lucide-react'
 import { useProduct, useRelatedProducts } from '../hooks/useProducts.js'
 import { useCart }     from '../context/CartContext.jsx'
 import { useWishlist } from '../context/WishlistContext.jsx'
 import { formatPrice, discountedPrice, getCategoryBySlug } from '../api/products.js'
-import { cn } from '../lib/utils.js'
 import ProductCard from '../components/product/ProductCard.jsx'
 
 export default function ProductDetailPage() {
   const { id } = useParams()
   const { data: product, isLoading, isError } = useProduct(id)
   const { data: related } = useRelatedProducts(product?.category, product?.id)
-
   const { addItem }              = useCart()
   const { toggle, isWishlisted } = useWishlist()
 
@@ -23,24 +21,48 @@ export default function ProductDetailPage() {
   const [selectedImg, setSelectedImg] = useState(0)
   const [activeTab,   setActiveTab]   = useState('description')
 
+  /* ── Loading ── */
   if (isLoading) return (
-    <div className="max-w-7xl mx-auto px-4 py-8 animate-pulse">
-      <div className="grid lg:grid-cols-2 gap-12">
-        <div className="aspect-square bg-slate-800 rounded-3xl shimmer-bg" />
-        <div className="space-y-4 pt-4">
-          {[1/4, 3/4, 1/3, 1, 2/3].map((w, i) => (
-            <div key={i} className="h-5 shimmer-bg rounded" style={{ width: `${w * 100}%` }} />
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 16px' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+        gap: '40px',
+      }}>
+        <div
+          className="shimmer-bg"
+          style={{ aspectRatio: '1', borderRadius: '16px', width: '100%' }}
+        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', paddingTop: '8px' }}>
+          {[25, 75, 33, 100, 66].map((w, i) => (
+            <div
+              key={i}
+              className="shimmer-bg"
+              style={{ height: '16px', width: w + '%', borderRadius: '6px' }}
+            />
           ))}
         </div>
       </div>
     </div>
   )
 
+  /* ── Error ── */
   if (isError || !product) return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center text-center">
-      <p className="text-5xl mb-4">😕</p>
-      <h2 className="font-display text-2xl font-bold text-white mb-2">Product not found</h2>
-      <Link to="/" className="btn-primary mt-4">Back to Home</Link>
+    <div style={{
+      minHeight: '60vh', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      textAlign: 'center', padding: '24px', backgroundColor: '#fff',
+    }}>
+      <p style={{ fontSize: '3rem', marginBottom: '12px' }}>😕</p>
+      <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.5rem', color: '#141414', marginBottom: '8px' }}>
+        Product not found
+      </h2>
+      <p style={{ color: '#757575', fontSize: '0.9rem', marginBottom: '20px' }}>
+        The product you're looking for doesn't exist or has been removed.
+      </p>
+      <Link to="/" className="btn-primary" style={{ borderRadius: '8px' }}>
+        Back to Home
+      </Link>
     </div>
   )
 
@@ -48,234 +70,480 @@ export default function ProductDetailPage() {
   const savings    = product.price - finalPrice
   const wishlisted = isWishlisted(product.id)
   const images     = product.images?.length ? product.images : [product.thumbnail]
+  const catLabel   = getCategoryBySlug(product.category)?.label || product.category
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div style={{ backgroundColor: '#fff', minHeight: '100vh' }}>
 
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm mb-8 flex-wrap">
-        <Link to="/" className="text-slate-500 hover:text-brand-400">Home</Link>
-        <ChevronRight className="w-4 h-4 text-slate-700" />
-        <Link to={`/category/${product.category}`} className="text-slate-500 hover:text-brand-400 capitalize">
-          {getCategoryBySlug(product.category)?.label || product.category}
-        </Link>
-        <ChevronRight className="w-4 h-4 text-slate-700" />
-        <span className="text-slate-300 truncate max-w-[200px]">{product.title}</span>
-      </nav>
+      {/* ── Breadcrumb ── */}
+      <div style={{ borderBottom: '1px solid #ebebeb', backgroundColor: '#f9f9f9' }}>
+        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '12px 16px' }}>
+          <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.78rem', flexWrap: 'wrap' }}>
+            <Link to="/" style={{ color: '#757575', textDecoration: 'none' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#4f7d52'}
+              onMouseLeave={e => e.currentTarget.style.color = '#757575'}
+            >Home</Link>
+            <ChevronRight style={{ width: '12px', height: '12px', color: '#c8c8c8', flexShrink: 0 }} />
+            <Link
+              to={'/category/' + product.category}
+              style={{ color: '#757575', textDecoration: 'none', textTransform: 'capitalize' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#4f7d52'}
+              onMouseLeave={e => e.currentTarget.style.color = '#757575'}
+            >{catLabel}</Link>
+            <ChevronRight style={{ width: '12px', height: '12px', color: '#c8c8c8', flexShrink: 0 }} />
+            <span style={{
+              color: '#242424', fontWeight: '500',
+              maxWidth: '200px', overflow: 'hidden',
+              textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>{product.title}</span>
+          </nav>
+        </div>
+      </div>
 
-      <div className="grid lg:grid-cols-2 gap-12 mb-20">
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '28px 16px 64px' }}>
 
-        {/* ── Image gallery ── */}
-        <div className="space-y-4">
-          <div className="relative aspect-square bg-slate-900 rounded-3xl overflow-hidden border border-white/8">
-            <img src={images[selectedImg]} alt={product.title} className="w-full h-full object-cover" />
-            {product.discountPercentage > 0.5 && (
-              <div className="absolute top-4 left-4 badge-sale text-base font-bold px-3 py-1">
-                -{Math.round(product.discountPercentage)}% OFF
+        {/* ── Main grid ── */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+          gap: '40px',
+          marginBottom: '56px',
+        }}>
+
+          {/* Images */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+            {/* Main image */}
+            <div style={{
+              position: 'relative', aspectRatio: '1',
+              backgroundColor: '#f7f7f7', borderRadius: '16px',
+              overflow: 'hidden', border: '1px solid #ebebeb',
+            }}>
+              <img
+                src={images[selectedImg]}
+                alt={product.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+
+              {product.discountPercentage > 0.5 && (
+                <div style={{ position: 'absolute', top: '12px', left: '12px' }}>
+                  <span className="badge-sale" style={{ fontSize: '0.75rem', padding: '3px 8px' }}>
+                    -{Math.round(product.discountPercentage)}% OFF
+                  </span>
+                </div>
+              )}
+
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setSelectedImg(i => Math.max(0, i - 1))}
+                    style={{
+                      position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)',
+                      width: '36px', height: '36px',
+                      backgroundColor: 'rgba(255,255,255,0.92)',
+                      border: '1px solid #e0e0e0', borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', transition: 'background-color 0.2s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fff'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.92)'}
+                  >
+                    <ChevronLeft style={{ width: '18px', height: '18px', color: '#3a3a3a' }} />
+                  </button>
+                  <button
+                    onClick={() => setSelectedImg(i => Math.min(images.length - 1, i + 1))}
+                    style={{
+                      position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                      width: '36px', height: '36px',
+                      backgroundColor: 'rgba(255,255,255,0.92)',
+                      border: '1px solid #e0e0e0', borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', transition: 'background-color 0.2s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fff'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.92)'}
+                  >
+                    <ChevronRight style={{ width: '18px', height: '18px', color: '#3a3a3a' }} />
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Thumbnails */}
+            {images.length > 1 && (
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+                {images.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImg(i)}
+                    style={{
+                      flexShrink: 0, width: '64px', height: '64px',
+                      borderRadius: '8px', overflow: 'hidden', padding: 0,
+                      border: '2px solid ' + (selectedImg === i ? '#4f7d52' : '#e0e0e0'),
+                      cursor: 'pointer', transition: 'border-color 0.2s',
+                      backgroundColor: '#f7f7f7',
+                    }}
+                  >
+                    <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </button>
+                ))}
               </div>
             )}
-            {images.length > 1 && (
-              <>
-                <button
-                  onClick={() => setSelectedImg(i => Math.max(0, i - 1))}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 rounded-xl flex items-center justify-center text-white hover:bg-black/70"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setSelectedImg(i => Math.min(images.length - 1, i + 1))}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/50 rounded-xl flex items-center justify-center text-white hover:bg-black/70"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </>
-            )}
           </div>
-          {images.length > 1 && (
-            <div className="flex gap-3 overflow-x-auto pb-1">
-              {images.map((img, i) => (
-                <button key={i} onClick={() => setSelectedImg(i)}
-                  className={cn('flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all',
-                    selectedImg === i ? 'border-brand-500' : 'border-white/10 hover:border-white/30')}>
-                  <img src={img} alt="" className="w-full h-full object-cover" />
-                </button>
+
+          {/* Product info */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+            {/* Brand + stock + title + rating */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: '0.72rem', color: '#4f7d52',
+                  textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: '600',
+                }}>
+                  {product.brand || product.category}
+                </span>
+                {product.stock > 0 ? (
+                  <span className="badge-new">In Stock ({product.stock})</span>
+                ) : (
+                  <span style={{
+                    display: 'inline-flex', padding: '2px 8px', borderRadius: '4px',
+                    fontSize: '0.68rem', fontWeight: '700',
+                    backgroundColor: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3',
+                  }}>Out of Stock</span>
+                )}
+              </div>
+
+              <h1 style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: 'clamp(1.4rem, 4vw, 2rem)',
+                fontWeight: '700', color: '#141414', lineHeight: '1.25',
+              }}>
+                {product.title}
+              </h1>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '2px' }}>
+                  {Array.from({ length: 5 }, (_, i) => (
+                    <Star
+                      key={i}
+                      style={{
+                        width: '15px', height: '15px',
+                        fill: i < Math.floor(product.rating) ? '#fbbf24' : 'none',
+                        color: i < Math.floor(product.rating) ? '#fbbf24' : '#d4d4d4',
+                      }}
+                    />
+                  ))}
+                </div>
+                <span style={{ fontSize: '0.82rem', color: '#757575' }}>
+                  {product.rating} ({product.reviews?.length || 0} reviews)
+                </span>
+              </div>
+            </div>
+
+            {/* Price */}
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
+              <span style={{
+                fontFamily: 'DM Sans, sans-serif',
+                fontSize: 'clamp(1.5rem, 4vw, 2rem)',
+                fontWeight: '700', color: '#141414',
+              }}>
+                {formatPrice(finalPrice)}
+              </span>
+              {savings > 0.5 && (
+                <>
+                  <span style={{ fontSize: '1rem', color: '#a0a0a0', textDecoration: 'line-through' }}>
+                    {formatPrice(product.price)}
+                  </span>
+                  <span className="badge-sale">Save {formatPrice(savings)}</span>
+                </>
+              )}
+            </div>
+
+            {/* Description */}
+            <p style={{ color: '#555555', fontSize: '0.9rem', lineHeight: '1.75', margin: 0 }}>
+              {product.description}
+            </p>
+
+            {/* Quantity */}
+            <div>
+              <p style={{ fontSize: '0.82rem', fontWeight: '600', color: '#3a3a3a', marginBottom: '10px' }}>
+                Quantity
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{
+                  display: 'flex', alignItems: 'center',
+                  border: '1.5px solid #e0e0e0', borderRadius: '8px', overflow: 'hidden',
+                }}>
+                  <button
+                    onClick={() => setQty(q => Math.max(1, q - 1))}
+                    style={{
+                      padding: '10px 14px', background: 'none', border: 'none',
+                      cursor: 'pointer', color: '#555555', display: 'flex', alignItems: 'center',
+                      transition: 'background-color 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f3f3'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <Minus style={{ width: '15px', height: '15px' }} />
+                  </button>
+                  <span style={{
+                    padding: '0 18px', fontWeight: '600', color: '#141414',
+                    fontSize: '0.95rem', minWidth: '40px', textAlign: 'center',
+                  }}>
+                    {qty}
+                  </span>
+                  <button
+                    onClick={() => setQty(q => Math.min(product.stock || 99, q + 1))}
+                    style={{
+                      padding: '10px 14px', background: 'none', border: 'none',
+                      cursor: 'pointer', color: '#555555', display: 'flex', alignItems: 'center',
+                      transition: 'background-color 0.15s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f3f3'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <Plus style={{ width: '15px', height: '15px' }} />
+                  </button>
+                </div>
+                <span style={{ fontSize: '0.8rem', color: '#a0a0a0' }}>
+                  {product.stock} available
+                </span>
+              </div>
+            </div>
+
+            {/* CTA buttons */}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => addItem(product, qty)}
+                disabled={product.stock === 0}
+                className="btn-primary"
+                style={{ flex: 1, minWidth: '140px', borderRadius: '8px', justifyContent: 'center' }}
+              >
+                <ShoppingCart style={{ width: '17px', height: '17px' }} /> Add to Cart
+              </button>
+              <button
+                onClick={() => toggle(product)}
+                style={{
+                  padding: '10px 16px', borderRadius: '8px',
+                  border: '1.5px solid ' + (wishlisted ? '#f43f5e' : '#e0e0e0'),
+                  backgroundColor: wishlisted ? '#fff1f2' : '#fff',
+                  color: wishlisted ? '#f43f5e' : '#555555',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={e => {
+                  if (!wishlisted) {
+                    e.currentTarget.style.borderColor = '#f43f5e'
+                    e.currentTarget.style.color = '#f43f5e'
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!wishlisted) {
+                    e.currentTarget.style.borderColor = '#e0e0e0'
+                    e.currentTarget.style.color = '#555555'
+                  }
+                }}
+              >
+                <Heart style={{ width: '17px', height: '17px', fill: wishlisted ? '#f43f5e' : 'none' }} />
+              </button>
+              <button style={{
+                padding: '10px 16px', borderRadius: '8px',
+                border: '1.5px solid #e0e0e0', backgroundColor: '#fff',
+                color: '#555555', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                transition: 'border-color 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = '#4f7d52'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = '#e0e0e0'}
+              >
+                <Share2 style={{ width: '17px', height: '17px' }} />
+              </button>
+            </div>
+
+            {/* Trust badges */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              {[
+                { Icon: Truck,     text: 'Free Delivery', sub: 'Over ₦50k' },
+                { Icon: Shield,    text: 'Secure Pay',    sub: 'Paystack'  },
+                { Icon: RotateCcw, text: 'Easy Returns',  sub: '30 days'   },
+              ].map(({ Icon, text, sub }, i) => (
+                <div key={i} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                  padding: '10px 6px', backgroundColor: '#f9f9f9',
+                  border: '1px solid #ebebeb', borderRadius: '8px', textAlign: 'center',
+                }}>
+                  <Icon style={{ width: '15px', height: '15px', color: '#4f7d52' }} />
+                  <span style={{ fontSize: '0.7rem', fontWeight: '600', color: '#242424' }}>{text}</span>
+                  <span style={{ fontSize: '0.65rem', color: '#a0a0a0' }}>{sub}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Meta */}
+            <div style={{
+              display: 'flex', flexDirection: 'column', gap: '6px',
+              fontSize: '0.82rem', paddingTop: '14px', borderTop: '1px solid #ebebeb',
+            }}>
+              {[
+                ['SKU',      product.sku || 'SKU-' + product.id],
+                ['Warranty', product.warrantyInformation || '1 Year'],
+                ['Shipping', product.shippingInformation || '2–5 business days'],
+              ].map(([label, value]) => (
+                <p key={label} style={{ color: '#757575', margin: 0 }}>
+                  {label}:{' '}
+                  <span style={{ color: '#3a3a3a' }}>{value}</span>
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* ── Tabs ── */}
+        <div style={{ marginBottom: '56px' }}>
+          <div style={{
+            display: 'flex', borderBottom: '1.5px solid #ebebeb',
+            marginBottom: '24px', gap: '4px', overflowX: 'auto',
+          }}>
+            {['description', 'reviews', 'shipping'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                style={{
+                  padding: '10px 20px', fontSize: '0.875rem', fontWeight: '500',
+                  textTransform: 'capitalize', border: 'none', background: 'none',
+                  cursor: 'pointer', whiteSpace: 'nowrap', transition: 'color 0.2s',
+                  borderBottom: '2px solid ' + (activeTab === tab ? '#4f7d52' : 'transparent'),
+                  color: activeTab === tab ? '#4f7d52' : '#757575',
+                  marginBottom: '-1.5px',
+                }}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {/* Description */}
+          {activeTab === 'description' && (
+            <div>
+              <p style={{ color: '#555555', fontSize: '0.9rem', lineHeight: '1.8', margin: 0 }}>
+                {product.description}
+              </p>
+              {product.tags?.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '16px' }}>
+                  {product.tags.map(tag => (
+                    <span key={tag} style={{
+                      padding: '4px 12px', backgroundColor: '#f3f3f3',
+                      border: '1px solid #e0e0e0', borderRadius: '99px',
+                      fontSize: '0.8rem', color: '#555555',
+                    }}>
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Reviews */}
+          {activeTab === 'reviews' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {product.reviews?.length ? (
+                product.reviews.map((r, i) => (
+                  <div key={i} style={{
+                    backgroundColor: '#f9f9f9', border: '1px solid #ebebeb',
+                    borderRadius: '10px', padding: '16px',
+                  }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'flex-start',
+                      justifyContent: 'space-between', marginBottom: '8px',
+                      gap: '8px', flexWrap: 'wrap',
+                    }}>
+                      <div>
+                        <p style={{ fontWeight: '600', color: '#242424', fontSize: '0.85rem', margin: 0 }}>
+                          {r.reviewerName}
+                        </p>
+                        <div style={{ display: 'flex', gap: '2px', marginTop: '4px' }}>
+                          {Array.from({ length: 5 }, (_, j) => (
+                            <Star key={j} style={{
+                              width: '12px', height: '12px',
+                              fill: j < r.rating ? '#fbbf24' : 'none',
+                              color: j < r.rating ? '#fbbf24' : '#d4d4d4',
+                            }} />
+                          ))}
+                        </div>
+                      </div>
+                      <span style={{ fontSize: '0.75rem', color: '#a0a0a0' }}>
+                        {new Date(r.date).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.85rem', color: '#555555', lineHeight: '1.6', margin: 0 }}>
+                      {r.comment}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <p style={{ color: '#a0a0a0', textAlign: 'center', padding: '32px 0', margin: 0 }}>
+                  No reviews yet.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Shipping */}
+          {activeTab === 'shipping' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[
+                {
+                  Icon: Truck,
+                  title: 'Delivery',
+                  text: product.shippingInformation || 'Standard: 2–5 days. Express: 1–2 days.',
+                },
+                {
+                  Icon: RotateCcw,
+                  title: 'Returns',
+                  text: product.returnPolicy || '30-day hassle-free returns in original packaging.',
+                },
+              ].map(({ Icon, title, text }) => (
+                <div key={title} style={{
+                  backgroundColor: '#f9f9f9', border: '1px solid #ebebeb',
+                  borderRadius: '10px', padding: '16px',
+                }}>
+                  <h4 style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    fontFamily: 'DM Sans, sans-serif', fontWeight: '600',
+                    color: '#242424', marginBottom: '6px', fontSize: '0.875rem', margin: '0 0 6px 0',
+                  }}>
+                    <Icon style={{ width: '15px', height: '15px', color: '#4f7d52' }} />
+                    {title}
+                  </h4>
+                  <p style={{ fontSize: '0.85rem', color: '#555555', lineHeight: '1.6', margin: 0 }}>
+                    {text}
+                  </p>
+                </div>
               ))}
             </div>
           )}
         </div>
 
-        {/* ── Product info ── */}
-        <div className="space-y-6">
+        {/* ── Related products ── */}
+        {related?.length > 0 && (
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-xs text-brand-400 uppercase tracking-wider font-medium">
-                {product.brand || product.category}
-              </span>
-              {product.stock > 0
-                ? <span className="badge-new text-xs">In Stock ({product.stock})</span>
-                : <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-red-500/20 text-red-400 border border-red-500/30">Out of Stock</span>
-              }
+            <h2 style={{
+              fontFamily: 'Georgia, serif', fontSize: '1.5rem',
+              fontWeight: '700', color: '#141414', marginBottom: '20px',
+            }}>
+              You Might Also Like
+            </h2>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 190px), 1fr))',
+              gap: '16px',
+            }}>
+              {related.map(p => <ProductCard key={p.id} product={p} />)}
             </div>
-            <h1 className="font-display text-3xl md:text-4xl font-bold text-white leading-tight mb-3">
-              {product.title}
-            </h1>
-            <div className="flex items-center gap-3">
-              <div className="flex gap-0.5">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <Star key={i} className={cn('w-4 h-4', i < Math.floor(product.rating) ? 'fill-amber-400 text-amber-400' : 'text-slate-700')} />
-                ))}
-              </div>
-              <span className="text-sm text-slate-400">{product.rating} ({product.reviews?.length || 0} reviews)</span>
-            </div>
-          </div>
-
-          {/* Price */}
-          <div className="flex items-end gap-3">
-            <span className="font-display text-4xl font-bold text-brand-400">{formatPrice(finalPrice)}</span>
-            {savings > 0.5 && (
-              <>
-                <span className="text-lg text-slate-600 line-through mb-1">{formatPrice(product.price)}</span>
-                <span className="badge-sale mb-1">Save {formatPrice(savings)}</span>
-              </>
-            )}
-          </div>
-
-          <p className="text-slate-400 leading-relaxed">{product.description}</p>
-
-          {/* Quantity */}
-          <div>
-            <p className="text-sm font-medium text-slate-300 mb-3">Quantity</p>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-                <button onClick={() => setQty(q => Math.max(1, q - 1))}
-                  className="p-3 text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="px-5 text-white font-semibold min-w-[3rem] text-center">{qty}</span>
-                <button onClick={() => setQty(q => Math.min(product.stock || 99, q + 1))}
-                  className="p-3 text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-              <p className="text-sm text-slate-500">{product.stock} available</p>
-            </div>
-          </div>
-
-          {/* CTAs */}
-          <div className="flex gap-3 flex-wrap">
-            <button
-              onClick={() => addItem(product, qty)}
-              disabled={product.stock === 0}
-              className="flex-1 btn-primary gap-2 py-3.5 rounded-2xl text-base disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ShoppingCart className="w-5 h-5" /> Add to Cart
-            </button>
-            <button onClick={() => toggle(product)}
-              className={cn('p-3.5 rounded-2xl border transition-all',
-                wishlisted
-                  ? 'bg-rose-500/20 border-rose-500/40 text-rose-400'
-                  : 'bg-white/5 border-white/10 text-slate-400 hover:text-rose-400 hover:border-rose-500/40')}>
-              <Heart className={cn('w-5 h-5', wishlisted && 'fill-current')} />
-            </button>
-            <button className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all">
-              <Share2 className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Trust */}
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { icon: <Truck className="w-4 h-4" />,    text: 'Free Delivery', sub: 'Over $100' },
-              { icon: <Shield className="w-4 h-4" />,   text: 'Secure Pay',    sub: 'Paystack'  },
-              { icon: <RotateCcw className="w-4 h-4" />,text: 'Easy Returns',  sub: '30 days'   },
-            ].map((b, i) => (
-              <div key={i} className="flex flex-col items-center gap-1 p-3 bg-white/5 rounded-xl text-center">
-                <span className="text-brand-400">{b.icon}</span>
-                <span className="text-xs font-medium text-white">{b.text}</span>
-                <span className="text-xs text-slate-500">{b.sub}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Meta */}
-          <div className="pt-2 space-y-1.5 text-sm">
-            <p className="text-slate-500">SKU: <span className="text-slate-300">{product.sku || `SKU-${product.id}`}</span></p>
-            <p className="text-slate-500">Warranty: <span className="text-slate-300">{product.warrantyInformation || '1 Year'}</span></p>
-            <p className="text-slate-500">Shipping: <span className="text-slate-300">{product.shippingInformation || '2–5 business days'}</span></p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Tabs ── */}
-      <div className="mb-16">
-        <div className="flex gap-1 border-b border-white/10 mb-8">
-          {['description', 'reviews', 'shipping'].map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)}
-              className={cn('px-5 py-3 text-sm font-medium capitalize transition-colors border-b-2 -mb-px',
-                activeTab === tab ? 'border-brand-500 text-brand-400' : 'border-transparent text-slate-500 hover:text-white')}>
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === 'description' && (
-          <div>
-            <p className="text-slate-400 leading-relaxed">{product.description}</p>
-            {product.tags && (
-              <div className="flex flex-wrap gap-2 mt-4">
-                {product.tags.map(tag => (
-                  <span key={tag} className="px-3 py-1 bg-white/5 border border-white/10 rounded-full text-sm text-slate-400">#{tag}</span>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab === 'reviews' && (
-          <div className="space-y-4">
-            {product.reviews?.length ? product.reviews.map((r, i) => (
-              <div key={i} className="card-dark p-5 rounded-2xl border border-white/8">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <p className="font-medium text-white text-sm">{r.reviewerName}</p>
-                    <div className="flex gap-0.5 mt-1">
-                      {Array.from({ length: 5 }, (_, j) => (
-                        <Star key={j} className={cn('w-3 h-3', j < r.rating ? 'fill-amber-400 text-amber-400' : 'text-slate-700')} />
-                      ))}
-                    </div>
-                  </div>
-                  <span className="text-xs text-slate-600">{new Date(r.date).toLocaleDateString()}</span>
-                </div>
-                <p className="text-sm text-slate-400">{r.comment}</p>
-              </div>
-            )) : <p className="text-slate-500 text-center py-8">No reviews yet.</p>}
-          </div>
-        )}
-
-        {activeTab === 'shipping' && (
-          <div className="space-y-4">
-            {[
-              { icon: <Truck className="w-4 h-4" />,    title: 'Delivery', text: product.shippingInformation || 'Standard: 2–5 days. Express: 1–2 days.' },
-              { icon: <RotateCcw className="w-4 h-4" />, title: 'Returns',  text: product.returnPolicy || '30-day hassle-free returns. Items must be unused in original packaging.' },
-            ].map(b => (
-              <div key={b.title} className="card-dark p-5 rounded-2xl border border-white/8">
-                <h4 className="font-semibold text-white mb-2 flex items-center gap-2 text-brand-400">{b.icon} <span className="text-white">{b.title}</span></h4>
-                <p className="text-sm text-slate-400">{b.text}</p>
-              </div>
-            ))}
           </div>
         )}
       </div>
-
-      {/* Related */}
-      {related?.length > 0 && (
-        <section>
-          <h2 className="section-title mb-8">You Might Also Like</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-            {related.map(p => <ProductCard key={p.id} product={p} />)}
-          </div>
-        </section>
-      )}
     </div>
   )
 }

@@ -1,17 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MapPin, User, ChevronRight, CheckCircle } from 'lucide-react'
+import { MapPin, User, ChevronRight, Check } from 'lucide-react'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useCart } from '../context/CartContext.jsx'
 import { formatPrice } from '../api/products.js'
 import toast from 'react-hot-toast'
 
-const NG_STATES = [
-  'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
-  'Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT','Gombe','Imo',
-  'Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa',
-  'Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara',
-]
+const NG_STATES = ['Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno','Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara']
+
+const STEPS = ['Information', 'Shipping', 'Payment']
 
 export default function CheckoutPage() {
   const navigate = useNavigate()
@@ -30,8 +27,7 @@ export default function CheckoutPage() {
     saveAddress: true,
   })
   const [loading, setLoading] = useState(false)
-
-  const set = (f) => (e) => setForm(v => ({ ...v, [f]: e.target.value }))
+  const set = f => e => setForm(v => ({ ...v, [f]: e.target.value }))
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -42,142 +38,146 @@ export default function CheckoutPage() {
     }
     setLoading(true)
     try {
-      if (form.saveAddress) {
-        await updateAddress({ street: form.address, city: form.city, state: form.state, zip: form.zip })
-      }
+      if (form.saveAddress) await updateAddress({ street: form.address, city: form.city, state: form.state, zip: form.zip })
       sessionStorage.setItem('checkout_data', JSON.stringify({ ...form, items, subtotal, shipping, tax, total }))
       navigate('/payment')
-    } catch {
-      toast.error('Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
-    }
+    } catch { toast.error('Something went wrong.') }
+    finally { setLoading(false) }
   }
 
-  const Field = ({ label, field, type = 'text', required = true, placeholder = '', readOnly = false }) => (
+  const Field = ({ label, field, type = 'text', required = true, placeholder = '' }) => (
     <div>
-      <label className="block text-sm font-medium text-slate-300 mb-1.5">
-        {label} {required && <span className="text-red-400">*</span>}
+      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#3a3a3a', marginBottom: '6px' }}>
+        {label} {required && <span style={{ color: '#ef4444' }}>*</span>}
       </label>
-      <input
-        type={type} value={form[field]} onChange={set(field)}
-        placeholder={placeholder} required={required} readOnly={readOnly}
-        className={`input-field ${readOnly ? 'opacity-60 cursor-not-allowed' : ''}`}
-      />
+      <input type={type} value={form[field]} onChange={set(field)} placeholder={placeholder} required={required}
+        className="input-field" style={{ fontSize: '0.875rem' }} />
     </div>
   )
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      {/* Steps */}
-      <div className="flex items-center gap-2 mb-10 flex-wrap">
-        {['Cart', 'Checkout', 'Payment', 'Done'].map((step, i) => (
-          <div key={step} className="flex items-center gap-2">
-            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold
-              ${i === 1 ? 'bg-brand-500 text-slate-950' : i < 1 ? 'bg-brand-500/30 text-brand-400' : 'bg-white/10 text-slate-600'}`}>
-              {i < 1 ? <CheckCircle className="w-4 h-4" /> : i + 1}
-            </div>
-            <span className={`text-sm ${i === 1 ? 'text-white font-medium' : 'text-slate-600'}`}>{step}</span>
-            {i < 3 && <ChevronRight className="w-4 h-4 text-slate-700" />}
-          </div>
-        ))}
-      </div>
+    <div style={{ backgroundColor: '#fff', minHeight: '100vh' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '24px 16px 64px' }}>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Steps */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px', gap: '0', overflowX: 'auto', padding: '4px' }}>
+          {STEPS.map((step, i) => (
+            <div key={step} style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                <div style={{
+                  width: '28px', height: '28px', borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '0.75rem', fontWeight: '700',
+                  backgroundColor: i === 1 ? '#4f7d52' : i < 1 ? '#f4f7f4' : '#f3f3f3',
+                  color: i === 1 ? '#fff' : i < 1 ? '#4f7d52' : '#a0a0a0',
+                  border: i === 1 ? 'none' : `2px solid ${i < 1 ? '#a3c4a5' : '#e0e0e0'}`,
+                }}>
+                  {i < 1 ? <Check style={{ width: '13px', height: '13px' }} /> : i + 1}
+                </div>
+                <span style={{ fontSize: '0.82rem', fontWeight: i === 1 ? '600' : '400', color: i === 1 ? '#242424' : '#a0a0a0', whiteSpace: 'nowrap' }}>{step}</span>
+              </div>
+              {i < STEPS.length - 1 && <div style={{ width: '40px', height: '1.5px', backgroundColor: '#e0e0e0', margin: '0 8px', flexShrink: 0 }} />}
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: '24px', alignItems: 'flex-start' }}>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
             {/* Contact */}
-            <div className="card-dark rounded-2xl p-6 border border-white/8">
-              <h2 className="font-display text-xl font-bold text-white mb-5 flex items-center gap-2">
-                <User className="w-5 h-5 text-brand-400" /> Contact Information
+            <div style={{ backgroundColor: '#fff', border: '1px solid #ebebeb', borderRadius: '12px', padding: '20px' }}>
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Georgia, serif', fontSize: '1rem', fontWeight: '700', color: '#141414', marginBottom: '16px' }}>
+                <User style={{ width: '16px', height: '16px', color: '#4f7d52' }} /> Contact Information
               </h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <Field label="First Name"    field="firstName" />
-                <Field label="Last Name"     field="lastName"  required={false} />
-                <Field label="Email"         field="email"     type="email" />
-                <Field label="Phone"         field="phone"     type="tel" placeholder="+234..." />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))', gap: '12px' }}>
+                <Field label="First Name" field="firstName" />
+                <Field label="Last Name"  field="lastName"  required={false} />
+                <Field label="Email"      field="email"     type="email" />
+                <Field label="Phone"      field="phone"     type="tel" placeholder="+234..." />
               </div>
             </div>
 
             {/* Address */}
-            <div className="card-dark rounded-2xl p-6 border border-white/8">
-              <h2 className="font-display text-xl font-bold text-white mb-5 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-brand-400" /> Shipping Address
+            <div style={{ backgroundColor: '#fff', border: '1px solid #ebebeb', borderRadius: '12px', padding: '20px' }}>
+              <h2 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Georgia, serif', fontSize: '1rem', fontWeight: '700', color: '#141414', marginBottom: '16px' }}>
+                <MapPin style={{ width: '16px', height: '16px', color: '#4f7d52' }} /> Shipping Address
               </h2>
 
               {user?.address && (
-                <div className="mb-4 p-4 bg-brand-500/10 border border-brand-500/20 rounded-xl">
-                  <p className="text-sm text-brand-400 font-medium mb-1">Saved Address</p>
-                  <p className="text-sm text-slate-400">{user.address.street}, {user.address.city}, {user.address.state}</p>
+                <div style={{ backgroundColor: '#f4f7f4', border: '1px solid #a3c4a5', borderRadius: '8px', padding: '12px', marginBottom: '14px' }}>
+                  <p style={{ fontSize: '0.78rem', color: '#4f7d52', fontWeight: '600', marginBottom: '4px' }}>Saved Address</p>
+                  <p style={{ fontSize: '0.82rem', color: '#555' }}>{user.address.street}, {user.address.city}, {user.address.state}</p>
                   <button type="button" onClick={() => setForm(f => ({ ...f, address: user.address.street, city: user.address.city, state: user.address.state, zip: user.address.zip || '' }))}
-                    className="text-xs text-brand-400 hover:underline mt-1">
+                    style={{ fontSize: '0.75rem', color: '#4f7d52', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 0', textDecoration: 'underline' }}>
                     Use this address
                   </button>
                 </div>
               )}
 
-              <div className="space-y-4">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <Field label="Street Address" field="address" placeholder="House number, street name" />
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '12px' }}>
                   <Field label="City" field="city" />
                   <div>
-                    <label className="block text-sm font-medium text-slate-300 mb-1.5">State <span className="text-red-400">*</span></label>
-                    <select value={form.state} onChange={set('state')} className="input-field">
-                      {NG_STATES.map(s => <option key={s} value={s} className="bg-slate-900">{s}</option>)}
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#3a3a3a', marginBottom: '6px' }}>
+                      State <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select value={form.state} onChange={set('state')} className="input-field" style={{ fontSize: '0.875rem', cursor: 'pointer' }}>
+                      {NG_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                 </div>
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))', gap: '12px' }}>
                   <Field label="ZIP Code" field="zip" required={false} />
-                  <Field label="Country" field="country" readOnly value="Nigeria" />
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', color: '#3a3a3a', marginBottom: '6px' }}>Country</label>
+                    <input value="Nigeria" readOnly className="input-field" style={{ fontSize: '0.875rem' }} />
+                  </div>
                 </div>
               </div>
 
-              <label className="flex items-center gap-2 mt-4 cursor-pointer">
-                <input type="checkbox" checked={form.saveAddress}
-                  onChange={e => setForm(f => ({ ...f, saveAddress: e.target.checked }))}
-                  className="w-4 h-4 accent-brand-500 rounded" />
-                <span className="text-sm text-slate-400">Save address for next time</span>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '14px', cursor: 'pointer' }}>
+                <input type="checkbox" checked={form.saveAddress} onChange={e => setForm(f => ({ ...f, saveAddress: e.target.checked }))}
+                  style={{ width: '15px', height: '15px', accentColor: '#4f7d52' }} />
+                <span style={{ fontSize: '0.82rem', color: '#757575' }}>Save address for next time</span>
               </label>
             </div>
 
-            <button type="submit" disabled={loading}
-              className="btn-primary w-full gap-2 py-4 rounded-2xl text-base">
+            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', borderRadius: '8px', fontSize: '0.875rem', padding: '12px', justifyContent: 'center' }}>
               {loading
-                ? <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                : <>Continue to Payment <ChevronRight className="w-4 h-4" /></>
+                ? <div style={{ width: '18px', height: '18px', border: '2px solid #fff', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                : <>Continue to Payment <ChevronRight style={{ width: '16px', height: '16px' }} /></>
               }
             </button>
           </form>
-        </div>
 
-        {/* Summary */}
-        <div>
-          <div className="card-dark rounded-2xl p-6 border border-white/8 sticky top-24">
-            <h3 className="font-display text-xl font-bold text-white mb-5">Order Summary</h3>
-            <div className="space-y-3 mb-4 max-h-56 overflow-y-auto">
+          {/* Order summary */}
+          <div style={{ backgroundColor: '#fff', border: '1px solid #ebebeb', borderRadius: '12px', padding: '20px', position: 'sticky', top: '80px' }}>
+            <h3 style={{ fontFamily: 'Georgia, serif', fontSize: '1.1rem', fontWeight: '700', color: '#141414', marginBottom: '16px' }}>Order Summary</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px', maxHeight: '220px', overflowY: 'auto' }}>
               {items.map(item => (
-                <div key={item.key} className="flex gap-3">
-                  <img src={item.product.thumbnail} alt="" className="w-12 h-12 rounded-lg object-cover bg-slate-800 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-slate-300 truncate">{item.product.title}</p>
-                    <p className="text-xs text-slate-500">Qty: {item.quantity}</p>
+                <div key={item.key} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <img src={item.product.thumbnail} alt="" style={{ width: '44px', height: '44px', borderRadius: '7px', objectFit: 'cover', backgroundColor: '#f7f7f7', flexShrink: 0, border: '1px solid #ebebeb' }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: '0.78rem', color: '#3a3a3a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.product.title}</p>
+                    <p style={{ fontSize: '0.7rem', color: '#a0a0a0' }}>Qty: {item.quantity}</p>
                   </div>
-                  <span className="text-sm text-brand-400 font-semibold whitespace-nowrap">{formatPrice(item.product.price * item.quantity)}</span>
+                  <span style={{ fontSize: '0.82rem', fontWeight: '600', color: '#141414', whiteSpace: 'nowrap' }}>{formatPrice(item.product.price * item.quantity)}</span>
                 </div>
               ))}
             </div>
-            <div className="border-t border-white/10 pt-4 space-y-2">
+            <div style={{ borderTop: '1px solid #ebebeb', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {[['Subtotal', formatPrice(subtotal)], ['Shipping', shipping === 0 ? 'FREE' : formatPrice(shipping)], ['Tax', formatPrice(tax)]].map(([l, v]) => (
-                <div key={l} className="flex justify-between text-sm">
-                  <span className="text-slate-400">{l}</span>
-                  <span className={v === 'FREE' ? 'text-brand-400' : 'text-white'}>{v}</span>
+                <div key={l} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                  <span style={{ color: '#757575' }}>{l}</span>
+                  <span style={{ color: v === 'FREE' ? '#4f7d52' : '#242424', fontWeight: v === 'FREE' ? '600' : '400' }}>{v}</span>
                 </div>
               ))}
-              <div className="border-t border-white/10 pt-3 flex justify-between">
-                <span className="font-semibold text-white">Total</span>
-                <span className="font-display text-xl font-bold text-brand-400">{formatPrice(total)}</span>
+              <div style={{ borderTop: '1px solid #ebebeb', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: '600', color: '#141414' }}>Total</span>
+                <span style={{ fontFamily: 'DM Sans, sans-serif', fontSize: '1.2rem', fontWeight: '700', color: '#141414' }}>{formatPrice(total)}</span>
               </div>
             </div>
           </div>
