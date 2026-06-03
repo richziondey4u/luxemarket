@@ -256,7 +256,7 @@ export default function Footer() {
                       }}
                     />
                   ),
-                  text: "123 Commerce St, Lagos, Nigeria",
+                  text: "001  Richzion Drive, Lagos, Nigeria",
                 },
                 {
                   icon: (
@@ -269,7 +269,7 @@ export default function Footer() {
                       }}
                     />
                   ),
-                  text: "+234 800 000 0000",
+                  text: "+2348039830412",
                 },
                 {
                   icon: (
@@ -282,7 +282,7 @@ export default function Footer() {
                       }}
                     />
                   ),
-                  text: "hello@luxemarket.com",
+                  text: "richzion@luxemarket.com",
                 },
               ].map((item, i) => (
                 <li
