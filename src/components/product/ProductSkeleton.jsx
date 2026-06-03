@@ -1,17 +1,50 @@
 export default function ProductSkeleton({ count = 8 }) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+        gap: "20px",
+      }}
+    >
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="bg-slate-900 border border-white/8 rounded-2xl overflow-hidden">
-          <div className="aspect-square shimmer-bg" />
-          <div className="p-4 space-y-3">
-            <div className="h-3 w-1/3 shimmer-bg rounded" />
-            <div className="h-4 w-full shimmer-bg rounded" />
-            <div className="h-3 w-2/3 shimmer-bg rounded" />
-            <div className="h-5 w-1/2 shimmer-bg rounded" />
+        <div
+          key={i}
+          style={{
+            backgroundColor: "#ffffff",
+            border: "1px solid #ebebeb",
+            borderRadius: "14px",
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ aspectRatio: "1" }} className="shimmer-bg" />
+          <div
+            style={{
+              padding: "14px 16px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
+          >
+            <div
+              style={{ height: "10px", width: "33%" }}
+              className="shimmer-bg rounded"
+            />
+            <div
+              style={{ height: "14px", width: "100%" }}
+              className="shimmer-bg rounded"
+            />
+            <div
+              style={{ height: "10px", width: "60%" }}
+              className="shimmer-bg rounded"
+            />
+            <div
+              style={{ height: "18px", width: "45%" }}
+              className="shimmer-bg rounded"
+            />
           </div>
         </div>
       ))}
     </div>
-  )
+  );
 }

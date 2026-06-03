@@ -1,30 +1,123 @@
-import { Link } from 'react-router-dom'
-import { Mail, Phone, MapPin, Twitter, Instagram, Facebook, Youtube } from 'lucide-react'
-import { CATEGORIES } from '../../api/products.js'
+import { Link } from "react-router-dom";
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Twitter,
+  Instagram,
+  Facebook,
+  Youtube,
+} from "lucide-react";
+import { CATEGORIES } from "../../api/products.js";
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-950 border-t border-white/8 pt-16 pb-8 mt-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
-
+    <footer
+      style={{
+        backgroundColor: "#f7f7f7",
+        borderTop: "1px solid #ebebeb",
+        paddingTop: "64px",
+        paddingBottom: "32px",
+        marginTop: "80px",
+      }}
+    >
+      <div
+        style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 1.5rem" }}
+      >
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "48px",
+            marginBottom: "48px",
+          }}
+        >
           {/* Brand */}
           <div>
-            <Link to="/" className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-brand-400 to-brand-600 rounded-lg flex items-center justify-center">
-                <span className="text-slate-950 font-display font-bold text-sm">L</span>
+            <Link
+              to="/"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                textDecoration: "none",
+                marginBottom: "16px",
+              }}
+            >
+              <div
+                style={{
+                  width: "32px",
+                  height: "32px",
+                  backgroundColor: "#4f7d52",
+                  borderRadius: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <span
+                  style={{
+                    color: "#fff",
+                    fontFamily: "Georgia, serif",
+                    fontWeight: "700",
+                    fontSize: "15px",
+                  }}
+                >
+                  L
+                </span>
               </div>
-              <span className="font-display font-bold text-white text-xl">
-                Luxe<span className="text-brand-400">Market</span>
+              <span
+                style={{
+                  fontFamily: "Georgia, serif",
+                  fontWeight: "700",
+                  color: "#141414",
+                  fontSize: "1.1rem",
+                }}
+              >
+                Luxe<span style={{ color: "#4f7d52" }}>Market</span>
               </span>
             </Link>
-            <p className="text-slate-500 text-sm leading-relaxed mb-6">
-              Premium shopping experience with curated products across all categories. Quality guaranteed, delivered to your door.
+            <p
+              style={{
+                color: "#757575",
+                fontSize: "0.875rem",
+                lineHeight: "1.7",
+                marginBottom: "20px",
+              }}
+            >
+              Premium shopping experience with curated products. Quality
+              guaranteed, delivered to your door.
             </p>
-            <div className="flex items-center gap-3">
+            <div style={{ display: "flex", gap: "8px" }}>
               {[Twitter, Instagram, Facebook, Youtube].map((Icon, i) => (
-                <a key={i} href="#" className="w-9 h-9 bg-white/8 rounded-lg flex items-center justify-center text-slate-400 hover:text-brand-400 hover:bg-brand-500/15 transition-all">
-                  <Icon className="w-4 h-4" />
+                <a
+                  key={i}
+                  href="#"
+                  style={{
+                    width: "36px",
+                    height: "36px",
+                    backgroundColor: "#ffffff",
+                    border: "1px solid #e0e0e0",
+                    borderRadius: "8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "#757575",
+                    transition: "all 0.2s",
+                    textDecoration: "none",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "#4f7d52";
+                    e.currentTarget.style.color = "#4f7d52";
+                    e.currentTarget.style.backgroundColor = "#f4f7f4";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#e0e0e0";
+                    e.currentTarget.style.color = "#757575";
+                    e.currentTarget.style.backgroundColor = "#ffffff";
+                  }}
+                >
+                  <Icon style={{ width: "15px", height: "15px" }} />
                 </a>
               ))}
             </div>
@@ -32,12 +125,45 @@ export default function Footer() {
 
           {/* Categories */}
           <div>
-            <h4 className="text-white font-semibold mb-4 font-display">Categories</h4>
-            <ul className="space-y-2.5">
-              {CATEGORIES.slice(0, 7).map(cat => (
+            <h4
+              style={{
+                fontFamily: "Georgia, serif",
+                fontWeight: "700",
+                color: "#141414",
+                marginBottom: "16px",
+                fontSize: "0.95rem",
+              }}
+            >
+              Categories
+            </h4>
+            <ul
+              style={{
+                listStyle: "none",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+              }}
+            >
+              {CATEGORIES.slice(0, 7).map((cat) => (
                 <li key={cat.slug}>
-                  <Link to={`/category/${cat.slug}`}
-                    className="text-sm text-slate-500 hover:text-brand-400 transition-colors flex items-center gap-2">
+                  <Link
+                    to={`/category/${cat.slug}`}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontSize: "0.85rem",
+                      color: "#757575",
+                      textDecoration: "none",
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "#4f7d52")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "#757575")
+                    }
+                  >
                     <span>{cat.icon}</span> {cat.label}
                   </Link>
                 </li>
@@ -45,19 +171,50 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Account links */}
+          {/* Account */}
           <div>
-            <h4 className="text-white font-semibold mb-4 font-display">Account</h4>
-            <ul className="space-y-2.5">
+            <h4
+              style={{
+                fontFamily: "Georgia, serif",
+                fontWeight: "700",
+                color: "#141414",
+                marginBottom: "16px",
+                fontSize: "0.95rem",
+              }}
+            >
+              Account
+            </h4>
+            <ul
+              style={{
+                listStyle: "none",
+                display: "flex",
+                flexDirection: "column",
+                gap: "10px",
+              }}
+            >
               {[
-                { to: '/login',    label: 'Login' },
-                { to: '/register', label: 'Create Account' },
-                { to: '/account',  label: 'My Orders' },
-                { to: '/cart',     label: 'Shopping Cart' },
-                { to: '/account',  label: 'Wishlist' },
-              ].map(l => (
+                { to: "/login", label: "Login" },
+                { to: "/register", label: "Create Account" },
+                { to: "/account", label: "My Orders" },
+                { to: "/cart", label: "Shopping Cart" },
+                { to: "/account", label: "Wishlist" },
+              ].map((l) => (
                 <li key={l.to + l.label}>
-                  <Link to={l.to} className="text-sm text-slate-500 hover:text-brand-400 transition-colors">
+                  <Link
+                    to={l.to}
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "#757575",
+                      textDecoration: "none",
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "#4f7d52")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "#757575")
+                    }
+                  >
                     {l.label}
                   </Link>
                 </li>
@@ -65,28 +222,129 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Contact + newsletter */}
+          {/* Contact */}
           <div>
-            <h4 className="text-white font-semibold mb-4 font-display">Contact Us</h4>
-            <ul className="space-y-3 mb-6">
-              <li className="flex items-center gap-3 text-sm text-slate-500">
-                <MapPin className="w-4 h-4 text-brand-400 flex-shrink-0" />
-                123 Commerce St, Lagos, Nigeria
-              </li>
-              <li className="flex items-center gap-3 text-sm text-slate-500">
-                <Phone className="w-4 h-4 text-brand-400 flex-shrink-0" />
-                +234 800 000 0000
-              </li>
-              <li className="flex items-center gap-3 text-sm text-slate-500">
-                <Mail className="w-4 h-4 text-brand-400 flex-shrink-0" />
-                hello@luxemarket.com
-              </li>
+            <h4
+              style={{
+                fontFamily: "Georgia, serif",
+                fontWeight: "700",
+                color: "#141414",
+                marginBottom: "16px",
+                fontSize: "0.95rem",
+              }}
+            >
+              Contact Us
+            </h4>
+            <ul
+              style={{
+                listStyle: "none",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+                marginBottom: "20px",
+              }}
+            >
+              {[
+                {
+                  icon: (
+                    <MapPin
+                      style={{
+                        width: "15px",
+                        height: "15px",
+                        color: "#4f7d52",
+                        flexShrink: 0,
+                      }}
+                    />
+                  ),
+                  text: "123 Commerce St, Lagos, Nigeria",
+                },
+                {
+                  icon: (
+                    <Phone
+                      style={{
+                        width: "15px",
+                        height: "15px",
+                        color: "#4f7d52",
+                        flexShrink: 0,
+                      }}
+                    />
+                  ),
+                  text: "+234 800 000 0000",
+                },
+                {
+                  icon: (
+                    <Mail
+                      style={{
+                        width: "15px",
+                        height: "15px",
+                        color: "#4f7d52",
+                        flexShrink: 0,
+                      }}
+                    />
+                  ),
+                  text: "hello@luxemarket.com",
+                },
+              ].map((item, i) => (
+                <li
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "10px",
+                    fontSize: "0.85rem",
+                    color: "#757575",
+                  }}
+                >
+                  {item.icon} {item.text}
+                </li>
+              ))}
             </ul>
-            <p className="text-sm text-slate-400 mb-2 font-medium">Newsletter</p>
-            <div className="flex">
-              <input type="email" placeholder="Your email"
-                className="flex-1 bg-white/5 border border-white/10 text-white placeholder:text-white/30 text-sm rounded-l-lg px-3 py-2 focus:outline-none focus:ring-1 focus:ring-brand-500" />
-              <button className="bg-brand-500 text-slate-950 text-sm font-semibold px-3 py-2 rounded-r-lg hover:bg-brand-400 transition-colors">
+
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "#3a3a3a",
+                fontWeight: "500",
+                marginBottom: "8px",
+              }}
+            >
+              Newsletter
+            </p>
+            <div style={{ display: "flex" }}>
+              <input
+                type="email"
+                placeholder="Your email"
+                style={{
+                  flex: 1,
+                  backgroundColor: "#ffffff",
+                  border: "1.5px solid #e0e0e0",
+                  borderRight: "none",
+                  color: "#242424",
+                  fontSize: "0.85rem",
+                  borderRadius: "6px 0 0 6px",
+                  padding: "8px 12px",
+                  outline: "none",
+                }}
+              />
+              <button
+                style={{
+                  backgroundColor: "#4f7d52",
+                  color: "#fff",
+                  fontSize: "0.8rem",
+                  fontWeight: "600",
+                  padding: "8px 14px",
+                  borderRadius: "0 6px 6px 0",
+                  border: "none",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#3d6440")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#4f7d52")
+                }
+              >
                 Go
               </button>
             </div>
@@ -94,20 +352,58 @@ export default function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="pt-8 border-t border-white/8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-slate-600">© {new Date().getFullYear()} LuxeMarket. All rights reserved.</p>
-          <div className="flex items-center gap-4 text-xs text-slate-600">
-            <a href="#" className="hover:text-slate-400">Privacy Policy</a>
-            <a href="#" className="hover:text-slate-400">Terms</a>
-            <a href="#" className="hover:text-slate-400">Refunds</a>
+        <div
+          style={{
+            paddingTop: "24px",
+            borderTop: "1px solid #e0e0e0",
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "12px",
+          }}
+        >
+          <p style={{ fontSize: "0.8rem", color: "#a0a0a0" }}>
+            © {new Date().getFullYear()} LuxeMarket. All rights reserved.
+          </p>
+          <div style={{ display: "flex", gap: "16px" }}>
+            {["Privacy Policy", "Terms", "Refunds"].map((l) => (
+              <a
+                key={l}
+                href="#"
+                style={{
+                  fontSize: "0.8rem",
+                  color: "#a0a0a0",
+                  textDecoration: "none",
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#4f7d52")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#a0a0a0")}
+              >
+                {l}
+              </a>
+            ))}
           </div>
-          <div className="flex items-center gap-2">
-            {['Paystack', 'Visa', 'Mastercard'].map(p => (
-              <span key={p} className="text-xs bg-white/8 text-slate-500 px-2 py-1 rounded border border-white/8 font-mono">{p}</span>
+          <div style={{ display: "flex", gap: "6px" }}>
+            {["Paystack", "Visa", "Mastercard"].map((p) => (
+              <span
+                key={p}
+                style={{
+                  fontSize: "0.72rem",
+                  color: "#a0a0a0",
+                  backgroundColor: "#ffffff",
+                  padding: "3px 8px",
+                  borderRadius: "4px",
+                  border: "1px solid #e0e0e0",
+                  fontFamily: "monospace",
+                }}
+              >
+                {p}
+              </span>
             ))}
           </div>
         </div>
       </div>
     </footer>
-  )
+  );
 }
