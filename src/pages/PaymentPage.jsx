@@ -141,7 +141,7 @@ export default function PaymentPage() {
             </div>
 
             {/* Notice */}
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-5">
+            {/* <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 mb-5">
               <div className="flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-blue-400 mt-0.5 flex-shrink-0" />
                 <div>
@@ -152,7 +152,7 @@ export default function PaymentPage() {
                   </p>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Pay button */}
             <button onClick={handlePaystack} disabled={loading || !paystackReady}
