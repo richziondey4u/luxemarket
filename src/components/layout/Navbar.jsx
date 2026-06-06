@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import {
   ShoppingCart, Search, Heart, Menu, X, User,
-  ChevronDown, LogOut, Package, Home, Zap, Sparkles, MapPin,
+  ChevronDown, LogOut, Package, Home, Zap, Sparkles,
+  MapPin, Phone, ChevronRight,
 } from 'lucide-react'
 import { useAuth }     from '../../context/AuthContext.jsx'
 import { useCart }     from '../../context/CartContext.jsx'
@@ -11,12 +12,11 @@ import { CATEGORIES }  from '../../api/products.js'
 import ThemePicker     from '../ui/ThemePicker.jsx'
 
 export default function Navbar() {
-  const [mobileOpen,  setMobileOpen]  = useState(false)
-  const [searchOpen,  setSearchOpen]  = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [catOpen,     setCatOpen]     = useState(false)
-  const [userOpen,    setUserOpen]    = useState(false)
-  const [scrolled,    setScrolled]    = useState(false)
+  const [mobileOpen,   setMobileOpen]   = useState(false)
+  const [searchQuery,  setSearchQuery]  = useState('')
+  const [mobileSearch, setMobileSearch] = useState('')
+  const [catOpen,      setCatOpen]      = useState(false)
+  const [userOpen,     setUserOpen]     = useState(false)
   const searchRef = useRef(null)
   const navigate  = useNavigate()
 
@@ -25,14 +25,13 @@ export default function Navbar() {
   const { count: wishCount } = useWishlist()
 
   useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 20)
-    window.addEventListener('scroll', h)
-    return () => window.removeEventListener('scroll', h)
+    const h = (e) => {
+      if (!e.target.closest('.cat-mega'))  setCatOpen(false)
+      if (!e.target.closest('.user-drop')) setUserOpen(false)
+    }
+    document.addEventListener('click', h)
+    return () => document.removeEventListener('click', h)
   }, [])
-
-  useEffect(() => {
-    if (searchOpen) searchRef.current?.focus()
-  }, [searchOpen])
 
   useEffect(() => {
     const h = () => { if (window.innerWidth >= 768) setMobileOpen(false) }
@@ -40,438 +39,385 @@ export default function Navbar() {
     return () => window.removeEventListener('resize', h)
   }, [])
 
-  // Close dropdowns when clicking outside
   useEffect(() => {
-    const h = (e) => {
-      if (!e.target.closest('.cat-dropdown')) setCatOpen(false)
-      if (!e.target.closest('.user-dropdown')) setUserOpen(false)
-    }
-    document.addEventListener('click', h)
-    return () => document.removeEventListener('click', h)
-  }, [])
+    document.body.style.overflow = mobileOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
 
-  const handleSearch = (e) => {
+  const handleSearch = (e, q) => {
     e.preventDefault()
-    const q = searchQuery.trim()
-    if (!q) return
-    navigate(`/search?q=${encodeURIComponent(q)}`)
-    setSearchOpen(false)
+    const query = (q ?? searchQuery).trim()
+    if (!query) return
+    navigate(`/search?q=${encodeURIComponent(query)}`)
     setMobileOpen(false)
     setSearchQuery('')
+    setMobileSearch('')
   }
 
+  const TOP_CATS = [
+    { to: '/flash-sale',                  label: '⚡ Flash Sale',     hot: true },
+    { to: '/new-arrivals',                label: '✨ New Arrivals' },
+    { to: '/category/smartphones',        label: 'Phones & Tablets' },
+    { to: '/category/laptops',            label: 'Computing' },
+    { to: '/category/tops',               label: 'Fashion' },
+    { to: '/category/home-decoration',    label: 'Home & Office' },
+    { to: '/category/skincare',           label: 'Beauty' },
+    { to: '/category/sports-accessories', label: 'Sports' },
+    { to: '/category/groceries',          label: 'Grocery' },
+  ]
+
+  // Shared icon-button style using your CSS vars
   const iconBtn = {
-    padding: '8px', background: 'none', border: 'none',
-    cursor: 'pointer', borderRadius: '8px',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    color: 'var(--text-muted)', transition: 'color 0.2s, background-color 0.2s',
+    position: 'relative', padding: '8px 10px',
+    color: '#fff', textDecoration: 'none',
+    display: 'flex', flexDirection: 'column',
+    alignItems: 'center', gap: '1px',
+    borderRadius: '4px', cursor: 'pointer',
+    background: 'none', border: 'none',
+    transition: 'background 0.2s',
   }
 
   return (
-    <header style={{
-      position: 'sticky', top: 0, zIndex: 100,
-      backgroundColor: 'var(--bg-page)',
-      borderBottom: '1px solid var(--border-light)',
-      boxShadow: scrolled ? 'var(--shadow-navbar)' : 'none',
-      transition: 'box-shadow 0.3s, background-color 0.3s',
-    }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 16px' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center',
-          justifyContent: 'space-between', height: '62px', gap: '8px',
-        }}>
+    <>
+      <header style={{ position: 'sticky', top: 0, zIndex: 100 }}>
 
-          {/* ── Logo ── */}
-          <Link to="/" onClick={() => setMobileOpen(false)} style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            textDecoration: 'none', flexShrink: 0,
-          }}>
-            <div style={{
-              width: '34px', height: '34px',
-              backgroundColor: 'var(--brand)',
-              borderRadius: '9px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <span style={{ color: '#fff', fontFamily: 'Georgia, serif', fontWeight: '700', fontSize: '17px' }}>L</span>
-            </div>
-            <span style={{ fontFamily: 'Georgia, serif', fontWeight: '700', color: 'var(--text-primary)', fontSize: '1.15rem' }}>
-              Luxe<span style={{ color: 'var(--brand)' }}>Market</span>
-            </span>
-          </Link>
+        {/* ── Top bar using your brand color ── */}
+        <div style={{ backgroundColor: 'var(--brand)' }}>
+          <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', height: '60px', gap: '12px' }}>
 
-          {/* ── Desktop Nav ── */}
-          <nav className="md-nav" style={{ display: 'none', alignItems: 'center', gap: '4px' }}>
-
-            <NavLink to="/" end style={({ isActive }) => ({
-              fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none', padding: '6px 12px', borderRadius: '8px',
-              color: isActive ? 'var(--brand)' : 'var(--text-secondary)',
-              backgroundColor: isActive ? 'var(--brand-light)' : 'transparent',
-              transition: 'all 0.2s',
-            })}>Home</NavLink>
-
-            {/* Categories dropdown */}
-            <div className="cat-dropdown" style={{ position: 'relative' }}>
-              <button
-                onClick={() => setCatOpen(o => !o)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '4px',
-                  fontSize: '0.875rem', fontWeight: '500',
-                  color: 'var(--text-secondary)',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  padding: '6px 12px', borderRadius: '8px', transition: 'all 0.2s',
-                }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-muted)'}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                Categories
-                <ChevronDown style={{ width: '14px', height: '14px', transform: catOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-              </button>
-
-              {catOpen && (
+              {/* Logo */}
+              <Link to="/" style={{ textDecoration: 'none', flexShrink: 0 }}>
                 <div style={{
-                  position: 'absolute', top: 'calc(100% + 6px)', left: '50%',
-                  transform: 'translateX(-50%)', width: '540px', zIndex: 200,
+                  backgroundColor: 'var(--bg-card)', borderRadius: '6px',
+                  padding: '5px 12px', display: 'flex', alignItems: 'center',
                 }}>
-                  <div style={{
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border-light)',
-                    borderRadius: '14px', padding: '14px',
-                    boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
-                  }}>
-                    <p style={{ fontSize: '0.68rem', fontWeight: '700', color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '10px', paddingLeft: '4px' }}>
-                      All Categories
-                    </p>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px' }}>
-                      {CATEGORIES.map(cat => (
-                        <Link key={cat.slug} to={`/category/${cat.slug}`}
-                          onClick={() => setCatOpen(false)}
-                          style={{
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px',
-                            padding: '10px 6px', borderRadius: '8px', textDecoration: 'none',
-                            textAlign: 'center', transition: 'background-color 0.15s',
-                          }}
-                          onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--brand-light)'}
-                          onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-                        >
-                          <span style={{ fontSize: '1.3rem' }}>{cat.icon}</span>
-                          <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: '600', lineHeight: '1.2' }}>{cat.label}</span>
-                        </Link>
-                      ))}
-                    </div>
-                    {/* Quick links inside dropdown */}
-                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-light)', display: 'flex', gap: '8px' }}>
-                      <Link to="/flash-sale" onClick={() => setCatOpen(false)} style={{
-                        display: 'flex', alignItems: 'center', gap: '5px',
-                        padding: '6px 12px', borderRadius: '99px', textDecoration: 'none',
-                        backgroundColor: '#fef3f2', border: '1px solid #fecdd3',
-                        fontSize: '0.72rem', fontWeight: '700', color: '#ef4444',
-                      }}>
-                        <Zap style={{ width: '11px', height: '11px', fill: '#ef4444' }} /> Flash Sale
-                      </Link>
-                      <Link to="/new-arrivals" onClick={() => setCatOpen(false)} style={{
-                        display: 'flex', alignItems: 'center', gap: '5px',
-                        padding: '6px 12px', borderRadius: '99px', textDecoration: 'none',
-                        backgroundColor: 'var(--brand-light)', border: '1px solid var(--brand-mid)',
-                        fontSize: '0.72rem', fontWeight: '700', color: 'var(--brand)',
-                      }}>
-                        <Sparkles style={{ width: '11px', height: '11px' }} /> New Arrivals
-                      </Link>
-                    </div>
-                  </div>
+                  <span style={{ fontFamily: 'Georgia, serif', fontWeight: '800', fontSize: '1.15rem', color: 'var(--brand)' }}>
+                    Luxe<span style={{ color: 'var(--text-primary)' }}>Market</span>
+                  </span>
                 </div>
-              )}
-            </div>
+              </Link>
 
-            {[
-              { to: '/category/smartphones',    label: 'Electronics' },
-              { to: '/category/tops',           label: 'Fashion' },
-              { to: '/flash-sale',              label: '⚡ Sale' },
-              { to: '/new-arrivals',            label: '✨ New' },
-            ].map(l => (
-              <NavLink key={l.to} to={l.to} style={({ isActive }) => ({
-                fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none',
-                padding: '6px 12px', borderRadius: '8px', transition: 'all 0.2s',
-                color: isActive ? 'var(--brand)' : 'var(--text-secondary)',
-                backgroundColor: isActive ? 'var(--brand-light)' : 'transparent',
-              })}
-              onMouseEnter={e => { if (!e.currentTarget.className.includes('active')) e.currentTarget.style.backgroundColor = 'var(--bg-muted)' }}
-              onMouseLeave={e => { if (!e.currentTarget.style.color.includes('brand')) e.currentTarget.style.backgroundColor = 'transparent' }}
-              >{l.label}</NavLink>
-            ))}
-          </nav>
-
-          {/* ── Right Actions ── */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '2px', flexShrink: 0 }}>
-
-            {/* Theme picker — desktop only */}
-            <div className="md-flex" style={{ display: 'none', marginRight: '2px' }}>
-              <ThemePicker />
-            </div>
-
-            {/* Search */}
-            {searchOpen ? (
-              <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center' }}>
-                <input ref={searchRef} value={searchQuery}
+              {/* Search bar — desktop only */}
+              <form onSubmit={handleSearch} className="md-show"
+                style={{ flex: 1, display: 'flex', maxWidth: '640px' }}>
+                <input
+                  ref={searchRef}
+                  value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search products..."
+                  placeholder="Search products, brands and categories"
                   style={{
-                    width: '160px', backgroundColor: 'var(--bg-muted)',
-                    border: '1.5px solid var(--border-medium)', borderRight: 'none',
-                    color: 'var(--text-primary)', fontSize: '0.82rem',
-                    borderRadius: '8px 0 0 8px', padding: '7px 11px', outline: 'none',
+                    flex: 1, border: 'none', outline: 'none',
+                    fontSize: '0.875rem', padding: '0 14px',
+                    borderRadius: '4px 0 0 4px',
+                    backgroundColor: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
+                    height: '40px',
                   }}
                 />
                 <button type="submit" style={{
-                  backgroundColor: 'var(--brand)', color: '#fff', border: 'none',
-                  borderRadius: '0 8px 8px 0', padding: '7px 11px', cursor: 'pointer', display: 'flex',
+                  backgroundColor: 'var(--brand-dark, var(--brand))',
+                  filter: 'brightness(0.85)',
+                  color: '#fff', border: 'none', cursor: 'pointer',
+                  padding: '0 18px', borderRadius: '0 4px 4px 0',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  fontSize: '0.875rem', fontWeight: '600', height: '40px',
                 }}>
-                  <Search style={{ width: '15px', height: '15px' }} />
-                </button>
-                <button type="button" onClick={() => setSearchOpen(false)} style={{ ...iconBtn, marginLeft: '2px' }}>
-                  <X style={{ width: '16px', height: '16px' }} />
+                  <Search style={{ width: '16px', height: '16px' }} />
+                  <span>Search</span>
                 </button>
               </form>
-            ) : (
-              <button onClick={() => setSearchOpen(true)} style={iconBtn}
-                onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand)'; e.currentTarget.style.backgroundColor = 'var(--brand-light)' }}
-                onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.backgroundColor = 'transparent' }}
-              >
-                <Search style={{ width: '20px', height: '20px' }} />
-              </button>
-            )}
 
-            {/* Wishlist */}
-            <Link to="/wishlist" style={{ ...iconBtn, position: 'relative', textDecoration: 'none' }}
-              onMouseEnter={e => { e.currentTarget.style.color = '#f43f5e'; e.currentTarget.style.backgroundColor = '#fff1f2' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.backgroundColor = 'transparent' }}
-            >
-              <Heart style={{ width: '20px', height: '20px' }} />
-              {wishCount > 0 && (
-                <span style={{
-                  position: 'absolute', top: '2px', right: '2px',
-                  width: '16px', height: '16px', backgroundColor: '#f43f5e',
-                  borderRadius: '50%', fontSize: '9px', color: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700',
-                }}>{wishCount}</span>
-              )}
-            </Link>
+              {/* Right actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '2px', marginLeft: 'auto' }}>
 
-            {/* Cart */}
-            <Link to="/cart" style={{ ...iconBtn, position: 'relative', textDecoration: 'none' }}
-              onMouseEnter={e => { e.currentTarget.style.color = 'var(--brand)'; e.currentTarget.style.backgroundColor = 'var(--brand-light)' }}
-              onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.backgroundColor = 'transparent' }}
-            >
-              <ShoppingCart style={{ width: '20px', height: '20px' }} />
-              {totalItems > 0 && (
-                <span style={{
-                  position: 'absolute', top: '2px', right: '2px',
-                  width: '17px', height: '17px', backgroundColor: 'var(--brand)',
-                  borderRadius: '50%', fontSize: '9px', color: '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700',
-                }}>{totalItems > 9 ? '9+' : totalItems}</span>
-              )}
-            </Link>
+                {/* Theme picker */}
+                <div className="md-show">
+                  <ThemePicker />
+                </div>
 
-            {/* User dropdown — desktop */}
-            {isAuthenticated ? (
-              <div className="md-flex user-dropdown" style={{ display: 'none', position: 'relative' }}>
-                <button
-                  onClick={() => setUserOpen(o => !o)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '7px',
-                    padding: '5px 10px 5px 5px', borderRadius: '99px',
-                    border: '1.5px solid var(--border-medium)',
-                    backgroundColor: 'var(--bg-card)',
-                    cursor: 'pointer', transition: 'all 0.2s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--brand)'}
-                  onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-medium)'}
-                >
-                  <img src={user.avatar} alt={user.name} style={{ width: '26px', height: '26px', borderRadius: '50%' }} />
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '500', maxWidth: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {user.name.split(' ')[0]}
-                  </span>
-                  <ChevronDown style={{ width: '12px', height: '12px', color: 'var(--text-subtle)', transform: userOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
-                </button>
-
-                {userOpen && (
-                  <div style={{
-                    position: 'absolute', right: 0, top: 'calc(100% + 6px)',
-                    width: '200px', zIndex: 200,
-                    backgroundColor: 'var(--bg-card)',
-                    border: '1px solid var(--border-light)',
-                    borderRadius: '12px', padding: '6px',
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
-                  }}>
-                    {/* User info */}
-                    <div style={{ padding: '10px 12px 10px', borderBottom: '1px solid var(--border-light)', marginBottom: '4px' }}>
-                      <p style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-primary)' }}>{user.name}</p>
-                      <p style={{ fontSize: '0.72rem', color: 'var(--text-subtle)', marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
-                    </div>
-
-                    {[
-                      { to: '/account',     label: 'My Account',   icon: <User    style={{ width: '14px', height: '14px' }} /> },
-                      { to: '/account',     label: 'My Orders',    icon: <Package style={{ width: '14px', height: '14px' }} /> },
-                      { to: '/wishlist',    label: 'Wishlist',     icon: <Heart   style={{ width: '14px', height: '14px' }} /> },
-                      { to: '/track-order', label: 'Track Order',  icon: <MapPin  style={{ width: '14px', height: '14px' }} /> },
-                    ].map(item => (
-                      <Link key={item.label} to={item.to}
-                        onClick={() => setUserOpen(false)}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '9px',
-                          padding: '9px 12px', fontSize: '0.82rem',
-                          color: 'var(--text-secondary)', textDecoration: 'none',
-                          borderRadius: '8px', transition: 'all 0.15s',
-                        }}
-                        onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--brand-light)'; e.currentTarget.style.color = 'var(--brand)' }}
-                        onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-                      >
-                        {item.icon} {item.label}
-                      </Link>
-                    ))}
-
-                    <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', margin: '4px 0' }} />
-
-                    <button onClick={() => { logout(); setUserOpen(false) }} style={{
-                      width: '100%', display: 'flex', alignItems: 'center', gap: '9px',
-                      padding: '9px 12px', fontSize: '0.82rem', color: '#ef4444',
-                      background: 'none', border: 'none', cursor: 'pointer', borderRadius: '8px',
-                      transition: 'background-color 0.15s',
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fff1f2'}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                {/* Account */}
+                {isAuthenticated ? (
+                  <div className="user-drop md-show" style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => setUserOpen(o => !o)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '6px 10px', borderRadius: '4px',
+                        border: 'none', background: 'rgba(255,255,255,0.15)',
+                        cursor: 'pointer', color: '#fff', transition: 'background 0.2s',
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
                     >
-                      <LogOut style={{ width: '14px', height: '14px' }} /> Sign Out
+                      <img src={user.avatar} alt={user.name}
+                        style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.5)' }} />
+                      <div style={{ textAlign: 'left' }}>
+                        <p style={{ fontSize: '0.63rem', color: 'rgba(255,255,255,0.8)', lineHeight: 1 }}>Account</p>
+                        <p style={{ fontSize: '0.78rem', fontWeight: '700', color: '#fff', lineHeight: 1.3, maxWidth: '70px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {user.name.split(' ')[0]}
+                        </p>
+                      </div>
+                      <ChevronDown size={12} style={{ color: 'rgba(255,255,255,0.8)', transform: userOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                     </button>
+
+                    {userOpen && (
+                      <div style={{
+                        position: 'absolute', right: 0, top: 'calc(100% + 4px)',
+                        width: '210px', zIndex: 300,
+                        backgroundColor: 'var(--bg-card)',
+                        border: '1px solid var(--border-light)',
+                        borderRadius: '8px',
+                        boxShadow: 'var(--shadow-card, 0 4px 20px rgba(0,0,0,0.15))',
+                        overflow: 'hidden',
+                      }}>
+                        <div style={{ padding: '12px 14px', backgroundColor: 'var(--brand-light, var(--bg-muted))', borderBottom: '1px solid var(--border-light)' }}>
+                          <p style={{ fontSize: '0.82rem', fontWeight: '700', color: 'var(--text-primary)' }}>{user.name}</p>
+                          <p style={{ fontSize: '0.72rem', color: 'var(--text-subtle)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</p>
+                        </div>
+                        {[
+                          { to: '/account',     icon: <User size={14} />,    label: 'My Account' },
+                          { to: '/account',     icon: <Package size={14} />, label: 'My Orders' },
+                          { to: '/wishlist',    icon: <Heart size={14} />,   label: 'Saved Items' },
+                          { to: '/track-order', icon: <MapPin size={14} />,  label: 'Track Order' },
+                        ].map(item => (
+                          <Link key={item.label} to={item.to}
+                            onClick={() => setUserOpen(false)}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '10px',
+                              padding: '10px 14px', fontSize: '0.82rem',
+                              color: 'var(--text-secondary)', textDecoration: 'none',
+                              borderBottom: '1px solid var(--border-light)',
+                              transition: 'background 0.15s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--brand-light, var(--bg-muted))'; e.currentTarget.style.color = 'var(--brand)' }}
+                            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+                          >
+                            <span style={{ color: 'var(--brand)' }}>{item.icon}</span> {item.label}
+                          </Link>
+                        ))}
+                        <button onClick={() => { logout(); setUserOpen(false) }} style={{
+                          width: '100%', display: 'flex', alignItems: 'center', gap: '10px',
+                          padding: '10px 14px', fontSize: '0.82rem', color: '#ef4444',
+                          background: 'none', border: 'none', cursor: 'pointer', transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fff1f2'}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                        >
+                          <LogOut size={14} /> Sign Out
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="md-show" style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <Link to="/login" style={{
+                      padding: '7px 14px', borderRadius: '4px',
+                      border: '1.5px solid rgba(255,255,255,0.7)',
+                      color: '#fff', textDecoration: 'none',
+                      fontSize: '0.8rem', fontWeight: '600',
+                      transition: 'background 0.2s',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >Login</Link>
+                    <Link to="/register" style={{
+                      padding: '7px 14px', borderRadius: '4px',
+                      backgroundColor: 'var(--bg-card)', color: 'var(--brand)',
+                      textDecoration: 'none', fontSize: '0.8rem', fontWeight: '700',
+                    }}>Sign Up</Link>
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className="md-flex" style={{ display: 'none', alignItems: 'center', gap: '6px', marginLeft: '4px' }}>
-                <Link to="/login" style={{
-                  fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: '500',
-                  padding: '7px 14px', borderRadius: '8px',
-                  border: '1.5px solid var(--border-medium)',
-                  textDecoration: 'none', transition: 'all 0.2s',
-                  backgroundColor: 'var(--bg-card)',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--brand)'; e.currentTarget.style.color = 'var(--brand)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border-medium)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
-                >Login</Link>
-                <Link to="/register" className="btn-primary" style={{ fontSize: '0.75rem', padding: '7px 16px' }}>Sign Up</Link>
-              </div>
-            )}
 
-            {/* Hamburger */}
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="md-hide"
-              style={{ ...iconBtn }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--bg-muted)'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-            >
-              {mobileOpen ? <X style={{ width: '21px', height: '21px' }} /> : <Menu style={{ width: '21px', height: '21px' }} />}
-            </button>
+                {/* Wishlist */}
+                <Link to="/wishlist"
+                  style={iconBtn}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <Heart size={20} style={{ color: '#fff' }} />
+                  <span style={{ fontSize: '0.6rem', fontWeight: '600', color: '#fff' }} className="md-show">Saved</span>
+                  {wishCount > 0 && (
+                    <span style={{
+                      position: 'absolute', top: '3px', right: '3px',
+                      minWidth: '16px', height: '16px',
+                      backgroundColor: 'var(--bg-card)', color: 'var(--brand)',
+                      borderRadius: '99px', fontSize: '9px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: '800', padding: '0 3px',
+                    }}>{wishCount}</span>
+                  )}
+                </Link>
+
+                {/* Cart */}
+                <Link to="/cart"
+                  style={iconBtn}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.15)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <ShoppingCart size={20} style={{ color: '#fff' }} />
+                  <span style={{ fontSize: '0.6rem', fontWeight: '600', color: '#fff' }} className="md-show">Cart</span>
+                  {totalItems > 0 && (
+                    <span style={{
+                      position: 'absolute', top: '3px', right: '3px',
+                      minWidth: '16px', height: '16px',
+                      backgroundColor: 'var(--bg-card)', color: 'var(--brand)',
+                      borderRadius: '99px', fontSize: '9px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontWeight: '800', padding: '0 3px',
+                    }}>{totalItems > 99 ? '99+' : totalItems}</span>
+                  )}
+                </Link>
+
+                {/* Hamburger — mobile only */}
+                <button onClick={() => setMobileOpen(o => !o)} className="md-hide"
+                  style={{
+                    padding: '8px', background: 'rgba(255,255,255,0.15)',
+                    border: 'none', cursor: 'pointer', color: '#fff',
+                    borderRadius: '4px', display: 'flex', alignItems: 'center',
+                  }}
+                >
+                  {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* ── Mobile Menu ── */}
+      {/* ── Mobile overlay ── */}
       {mobileOpen && (
-        <div style={{
-          backgroundColor: 'var(--bg-page)',
-          borderTop: '1px solid var(--border-light)',
-          padding: '12px 16px 20px',
-          maxHeight: '85vh', overflowY: 'auto',
-        }}>
-          {/* Mobile search */}
-          <form onSubmit={handleSearch} style={{ display: 'flex', marginBottom: '14px' }}>
-            <input value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search products..."
+        <div onClick={() => setMobileOpen(false)}
+          style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 90 }} />
+      )}
+
+      {/* ── Mobile drawer (slides from left) ── */}
+      <div style={{
+        position: 'fixed', top: 0, left: 0, bottom: 0,
+        width: '290px', backgroundColor: 'var(--bg-card)',
+        zIndex: 200,
+        transform: mobileOpen ? 'translateX(0)' : 'translateX(-100%)',
+        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+        display: 'flex', flexDirection: 'column',
+        overflowY: 'auto',
+        boxShadow: '4px 0 20px rgba(0,0,0,0.15)',
+      }}>
+        {/* Drawer header */}
+        <div style={{ backgroundColor: 'var(--brand)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          {isAuthenticated ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <img src={user.avatar} alt={user.name}
+                style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.6)' }} />
+              <div>
+                <p style={{ fontSize: '0.85rem', fontWeight: '700', color: '#fff' }}>Hi, {user.name.split(' ')[0]}</p>
+                <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.75)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>{user.email}</p>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <Link to="/login" onClick={() => setMobileOpen(false)} style={{
+                padding: '7px 16px', backgroundColor: 'var(--bg-card)', color: 'var(--brand)',
+                borderRadius: '4px', textDecoration: 'none', fontSize: '0.82rem', fontWeight: '700',
+              }}>Login</Link>
+              <Link to="/register" onClick={() => setMobileOpen(false)} style={{
+                padding: '7px 16px', backgroundColor: 'rgba(255,255,255,0.2)',
+                color: '#fff', borderRadius: '4px', textDecoration: 'none',
+                fontSize: '0.82rem', fontWeight: '700', border: '1px solid rgba(255,255,255,0.4)',
+              }}>Register</Link>
+            </div>
+          )}
+          <button onClick={() => setMobileOpen(false)}
+            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: '4px', marginLeft: '8px' }}>
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Mobile search */}
+        <form onSubmit={e => handleSearch(e, mobileSearch)}
+          style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-light)', flexShrink: 0 }}>
+          <div style={{ display: 'flex' }}>
+            <input value={mobileSearch} onChange={e => setMobileSearch(e.target.value)}
+              placeholder="Search LuxeMarket..."
               style={{
-                flex: 1, backgroundColor: 'var(--bg-muted)',
-                border: '1.5px solid var(--border-medium)', borderRight: 'none',
-                color: 'var(--text-primary)', fontSize: '0.875rem',
-                borderRadius: '8px 0 0 8px', padding: '9px 12px', outline: 'none',
+                flex: 1, border: '1.5px solid var(--border-medium)', borderRight: 'none',
+                padding: '8px 12px', fontSize: '0.875rem', outline: 'none',
+                borderRadius: '4px 0 0 4px', backgroundColor: 'var(--bg-muted)',
+                color: 'var(--text-primary)',
               }}
             />
             <button type="submit" style={{
               backgroundColor: 'var(--brand)', color: '#fff', border: 'none',
-              borderRadius: '0 8px 8px 0', padding: '9px 14px', cursor: 'pointer', display: 'flex',
+              padding: '8px 14px', cursor: 'pointer', borderRadius: '0 4px 4px 0',
+              display: 'flex', alignItems: 'center',
             }}>
-              <Search style={{ width: '16px', height: '16px' }} />
+              <Search size={16} />
             </button>
-          </form>
-
-          {/* Theme picker in mobile */}
-          <div style={{ marginBottom: '12px' }}>
-            <ThemePicker />
           </div>
+        </form>
 
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', marginBottom: '10px' }} />
+        {/* Theme picker */}
+        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--border-light)', flexShrink: 0 }}>
+          <ThemePicker />
+        </div>
 
-          {/* Nav links */}
+        {/* Category label */}
+        <div style={{ padding: '10px 16px 6px', backgroundColor: 'var(--bg-muted)', flexShrink: 0 }}>
+          <p style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--text-subtle)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Categories</p>
+        </div>
+
+        {/* Category list */}
+        <div style={{ flex: 1, overflowY: 'auto' }}>
           {[
-            { to: '/',                            label: 'Home',          icon: <Home          style={{ width: '16px', height: '16px' }} />, end: true },
-            { to: '/category/smartphones',        label: 'Electronics',   icon: <span>📱</span> },
-            { to: '/category/tops',               label: 'Fashion',       icon: <span>👕</span> },
-            { to: '/category/home-decoration',    label: 'Home & Decor',  icon: <span>🏠</span> },
-            { to: '/category/skincare',           label: 'Skincare',      icon: <span>✨</span> },
-            { to: '/category/fragrances',         label: 'Fragrances',    icon: <span>🌸</span> },
-            { to: '/flash-sale',                  label: '⚡ Flash Sale', icon: <Zap      style={{ width: '16px', height: '16px' }} /> },
-            { to: '/new-arrivals',                label: '✨ New Arrivals',icon: <Sparkles style={{ width: '16px', height: '16px' }} /> },
-            { to: '/wishlist',                    label: `Wishlist`,      icon: <Heart    style={{ width: '16px', height: '16px' }} /> },
-            { to: '/cart',                        label: `Cart (${totalItems})`, icon: <ShoppingCart style={{ width: '16px', height: '16px' }} /> },
-            { to: '/track-order',                 label: 'Track Order',   icon: <MapPin   style={{ width: '16px', height: '16px' }} /> },
+            { to: '/flash-sale',   label: '⚡ Flash Sale',  hot: true },
+            { to: '/new-arrivals', label: '✨ New Arrivals' },
+            ...CATEGORIES.map(c => ({ to: `/category/${c.slug}`, label: `${c.icon} ${c.label}` })),
           ].map(link => (
-            <NavLink key={link.to + link.label} to={link.to} end={link.end}
+            <NavLink key={link.to} to={link.to}
               onClick={() => setMobileOpen(false)}
               style={({ isActive }) => ({
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '10px 12px', borderRadius: '9px',
-                fontSize: '0.875rem', fontWeight: '500', textDecoration: 'none',
-                marginBottom: '2px',
-                backgroundColor: isActive ? 'var(--brand-light)' : 'transparent',
-                color: isActive ? 'var(--brand)' : 'var(--text-secondary)',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '11px 16px', fontSize: '0.875rem',
+                color: link.hot ? '#ef4444' : isActive ? 'var(--brand)' : 'var(--text-secondary)',
+                textDecoration: 'none',
+                fontWeight: link.hot || isActive ? '600' : '400',
+                borderBottom: '1px solid var(--border-light)',
+                backgroundColor: isActive ? 'var(--brand-light, var(--bg-muted))' : 'transparent',
               })}
-            >{link.icon} {link.label}</NavLink>
+            >
+              {link.label}
+              <ChevronRight size={14} style={{ color: 'var(--text-subtle)' }} />
+            </NavLink>
           ))}
-
-          <hr style={{ border: 'none', borderTop: '1px solid var(--border-light)', margin: '10px 0' }} />
-
-          {isAuthenticated ? (
-            <>
-              <div style={{ padding: '10px 12px', backgroundColor: 'var(--bg-section)', borderRadius: '9px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <img src={user.avatar} alt={user.name} style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
-                <div>
-                  <p style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-primary)' }}>{user.name}</p>
-                  <p style={{ fontSize: '0.72rem', color: 'var(--text-subtle)' }}>{user.email}</p>
-                </div>
-              </div>
-              <Link to="/account" onClick={() => setMobileOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '9px', fontSize: '0.875rem', color: 'var(--text-secondary)', textDecoration: 'none', marginBottom: '2px' }}>
-                <User style={{ width: '16px', height: '16px' }} /> My Account
-              </Link>
-              <button onClick={() => { logout(); setMobileOpen(false) }} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '9px', fontSize: '0.875rem', color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', width: '100%' }}>
-                <LogOut style={{ width: '16px', height: '16px' }} /> Sign Out
-              </button>
-            </>
-          ) : (
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <Link to="/login"    onClick={() => setMobileOpen(false)} className="btn-secondary" style={{ flex: 1, fontSize: '0.82rem', padding: '10px', justifyContent: 'center' }}>Login</Link>
-              <Link to="/register" onClick={() => setMobileOpen(false)} className="btn-primary"   style={{ flex: 1, fontSize: '0.82rem', padding: '10px', justifyContent: 'center' }}>Sign Up</Link>
-            </div>
-          )}
         </div>
-      )}
+
+        {/* Footer actions */}
+        {isAuthenticated && (
+          <div style={{ borderTop: '1px solid var(--border-light)', padding: '12px 16px', flexShrink: 0 }}>
+            <Link to="/account" onClick={() => setMobileOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.875rem', borderBottom: '1px solid var(--border-light)' }}>
+              <User size={16} style={{ color: 'var(--brand)' }} /> My Account
+            </Link>
+            <Link to="/account" onClick={() => setMobileOpen(false)} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 0', color: 'var(--text-secondary)', textDecoration: 'none', fontSize: '0.875rem', borderBottom: '1px solid var(--border-light)' }}>
+              <Package size={16} style={{ color: 'var(--brand)' }} /> My Orders
+            </Link>
+            <button onClick={() => { logout(); setMobileOpen(false) }} style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '10px 0', color: '#ef4444', background: 'none',
+              border: 'none', cursor: 'pointer', fontSize: '0.875rem', width: '100%',
+            }}>
+              <LogOut size={16} /> Sign Out
+            </button>
+          </div>
+        )}
+      </div>
 
       <style>{`
-        .md-nav  { display: none !important; }
-        .md-flex { display: none !important; }
+        .md-show { display: none !important; }
         .md-hide { display: flex !important; }
         @media (min-width: 768px) {
-          .md-nav  { display: flex !important; }
-          .md-flex { display: flex !important; }
+          .md-show { display: flex !important; }
           .md-hide { display: none !important; }
         }
       `}</style>
-    </header>
+    </>
   )
 }
