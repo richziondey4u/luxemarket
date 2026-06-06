@@ -79,7 +79,7 @@ export default function TermsPage() {
           <span style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--brand)', letterSpacing: '0.08em' }}>TERMS & CONDITIONS</span>
         </div>
         <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '10px' }}>Terms & Conditions</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Last updated: January 1, 2025</p>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Last updated: June 6, 2026</p>
       </div>
 
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 16px 72px' }}>
