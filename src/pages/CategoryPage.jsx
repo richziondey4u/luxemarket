@@ -1,6 +1,6 @@
 import { useParams, Link } from "react-router-dom";
 import { useState } from "react";
-import { ChevronRight, SlidersHorizontal, X } from "lucide-react";
+import { ChevronRight, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import { useProductsByCategory } from "../hooks/useProducts.js";
 import { getCategoryBySlug, CATEGORIES, formatPrice } from "../api/products.js";
 import ProductCard from "../components/product/ProductCard.jsx";
@@ -14,27 +14,36 @@ const SORT_OPTIONS = [
   { value: "discount", label: "Best Discount" },
 ];
 
+const RATING_FILTERS = [
+  { label: "All Ratings", min: 0 },
+  { label: "4★ & above", min: 4 },
+  { label: "4.5★ & above", min: 4.5 },
+];
+
 export default function CategoryPage() {
   const { slug } = useParams();
   const category = getCategoryBySlug(slug);
+
   const [sort, setSort] = useState("default");
   const [maxPrice, setMaxPrice] = useState(2000);
   const [minRating, setMinRating] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
 
-  const { data, isLoading, isError } = useProductsByCategory(slug, 30);
+  // Fetch up to 100 products (DummyJSON max per category)
+  const { data, isLoading, isError } = useProductsByCategory(slug, 100, 0);
   const all = data?.products || [];
 
-  const sorted = [...all]
-    .filter((p) => p.price <= maxPrice && p.rating >= minRating)
-    .sort((a, b) => {
-      if (sort === "price-asc") return a.price - b.price;
-      if (sort === "price-desc") return b.price - a.price;
-      if (sort === "rating") return b.rating - a.rating;
-      if (sort === "discount")
-        return b.discountPercentage - a.discountPercentage;
-      return 0;
-    });
+  const filtered = all.filter(
+    (p) => p.price <= maxPrice && p.rating >= minRating,
+  );
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "price-asc") return a.price - b.price;
+    if (sort === "price-desc") return b.price - a.price;
+    if (sort === "rating") return b.rating - a.rating;
+    if (sort === "discount") return b.discountPercentage - a.discountPercentage;
+    return 0;
+  });
 
   if (!category)
     return (
@@ -46,7 +55,8 @@ export default function CategoryPage() {
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
-          padding: "24px",
+          padding: "32px 16px",
+          backgroundColor: "var(--bg-page)",
         }}
       >
         <p style={{ fontSize: "3rem", marginBottom: "12px" }}>🔍</p>
@@ -54,41 +64,45 @@ export default function CategoryPage() {
           style={{
             fontFamily: "Georgia, serif",
             fontSize: "1.5rem",
-            color: "#141414",
+            color: "var(--text-primary)",
             marginBottom: "8px",
           }}
         >
           Category not found
         </h2>
-        <Link to="/" className="btn-primary" style={{ marginTop: "16px" }}>
+        <Link
+          to="/"
+          className="btn-primary"
+          style={{ marginTop: "16px", borderRadius: "6px" }}
+        >
           Back to Home
         </Link>
       </div>
     );
 
   const Sidebar = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       {/* Price */}
       <div>
-        <h4
+        <p
           style={{
-            fontSize: "0.82rem",
+            fontSize: "0.8rem",
             fontWeight: "700",
-            color: "#141414",
-            marginBottom: "12px",
+            color: "var(--text-primary)",
+            marginBottom: "10px",
             textTransform: "uppercase",
-            letterSpacing: "0.06em",
+            letterSpacing: "0.05em",
           }}
         >
-          Max Price
-        </h4>
+          Price Range
+        </p>
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            fontSize: "0.8rem",
-            color: "#757575",
-            marginBottom: "8px",
+            fontSize: "0.75rem",
+            color: "var(--text-muted)",
+            marginBottom: "6px",
           }}
         >
           <span>₦0</span>
@@ -101,256 +115,326 @@ export default function CategoryPage() {
           step={10}
           value={maxPrice}
           onChange={(e) => setMaxPrice(+e.target.value)}
-          style={{ width: "100%", accentColor: "#4f7d52" }}
+          style={{ width: "100%", accentColor: "var(--brand)" }}
         />
       </div>
+
       {/* Rating */}
       <div>
-        <h4
+        <p
           style={{
-            fontSize: "0.82rem",
+            fontSize: "0.8rem",
             fontWeight: "700",
-            color: "#141414",
-            marginBottom: "12px",
+            color: "var(--text-primary)",
+            marginBottom: "10px",
             textTransform: "uppercase",
-            letterSpacing: "0.06em",
+            letterSpacing: "0.05em",
           }}
         >
-          Min Rating
-        </h4>
+          Rating
+        </p>
         <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-          {[0, 3, 3.5, 4, 4.5].map((r) => (
+          {RATING_FILTERS.map((r) => (
             <button
-              key={r}
-              onClick={() => setMinRating(r)}
+              key={r.min}
+              onClick={() => setMinRating(r.min)}
               style={{
                 textAlign: "left",
-                padding: "8px 12px",
-                borderRadius: "7px",
+                padding: "8px 10px",
+                borderRadius: "6px",
                 fontSize: "0.82rem",
                 border: "none",
                 cursor: "pointer",
                 transition: "all 0.15s",
-                backgroundColor: minRating === r ? "#f4f7f4" : "transparent",
-                color: minRating === r ? "#4f7d52" : "#555",
-                fontWeight: minRating === r ? "600" : "400",
+                backgroundColor:
+                  minRating === r.min ? "var(--brand-light)" : "transparent",
+                color:
+                  minRating === r.min
+                    ? "var(--brand)"
+                    : "var(--text-secondary)",
+                fontWeight: minRating === r.min ? "600" : "400",
               }}
             >
-              {r === 0 ? "All Ratings" : `${r}★ & above`}
+              {r.label}
             </button>
           ))}
         </div>
       </div>
+
       <button
         onClick={() => {
           setMaxPrice(2000);
           setMinRating(0);
         }}
         style={{
-          fontSize: "0.8rem",
-          color: "#a0a0a0",
+          fontSize: "0.78rem",
+          color: "var(--text-subtle)",
           background: "none",
           border: "none",
           cursor: "pointer",
           textAlign: "left",
           padding: "4px 0",
+          textDecoration: "underline",
         }}
       >
-        Clear All Filters
+        Clear all filters
       </button>
     </div>
   );
 
   return (
-    <div style={{ backgroundColor: "#fff", minHeight: "100vh" }}>
+    <div style={{ backgroundColor: "var(--bg-section)", minHeight: "100vh" }}>
       {/* Breadcrumb */}
       <div
         style={{
-          borderBottom: "1px solid #ebebeb",
-          backgroundColor: "#f9f9f9",
+          backgroundColor: "var(--bg-card)",
+          borderBottom: "1px solid var(--border-light)",
         }}
       >
         <div
-          style={{ maxWidth: "1280px", margin: "0 auto", padding: "12px 16px" }}
+          style={{ maxWidth: "1280px", margin: "0 auto", padding: "10px 16px" }}
         >
           <nav
             style={{
               display: "flex",
               alignItems: "center",
               gap: "6px",
-              fontSize: "0.8rem",
+              fontSize: "0.78rem",
               flexWrap: "wrap",
             }}
           >
             <Link
               to="/"
-              style={{ color: "#757575", textDecoration: "none" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "#4f7d52")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "#757575")}
+              style={{ color: "var(--text-muted)", textDecoration: "none" }}
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.color = "var(--brand)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.color = "var(--text-muted)")
+              }
             >
               Home
             </Link>
             <ChevronRight
-              style={{ width: "13px", height: "13px", color: "#c8c8c8" }}
+              style={{
+                width: "12px",
+                height: "12px",
+                color: "var(--text-subtle)",
+              }}
             />
-            <span style={{ color: "#242424", fontWeight: "500" }}>
+            <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>
               {category.label}
             </span>
           </nav>
         </div>
       </div>
 
-      {/* Category hero */}
+      {/* Category banner */}
       <div
         style={{
-          background: `linear-gradient(135deg, ${category.color.includes("blue") ? "#eff6ff" : "#f4f7f4"}, #f9f9f9)`,
-          borderBottom: "1px solid #ebebeb",
-          padding: "clamp(28px, 5vw, 48px) 16px",
+          background: `linear-gradient(135deg, #1a3a1c, #2d5a30)`,
+          padding: "clamp(16px, 3vw, 28px) clamp(16px, 4vw, 32px)",
+          marginBottom: "8px",
         }}
       >
-        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
-          <span
-            style={{
-              fontSize: "clamp(2.5rem, 6vw, 3.5rem)",
-              display: "block",
-              marginBottom: "10px",
-            }}
-          >
+        <div
+          style={{
+            maxWidth: "1280px",
+            margin: "0 auto",
+            display: "flex",
+            alignItems: "center",
+            gap: "14px",
+          }}
+        >
+          <span style={{ fontSize: "clamp(2rem, 5vw, 3rem)" }}>
             {category.icon}
           </span>
-          <h1
-            style={{
-              fontFamily: "Georgia, serif",
-              fontSize: "clamp(1.75rem, 5vw, 2.75rem)",
-              fontWeight: "700",
-              color: "#141414",
-              marginBottom: "6px",
-            }}
-          >
-            {category.label}
-          </h1>
-          <p style={{ color: "#757575", fontSize: "0.9rem" }}>
-            {data?.total || sorted.length} products available
-          </p>
+          <div>
+            <h1
+              style={{
+                fontFamily: "Georgia, serif",
+                fontSize: "clamp(1.25rem, 3vw, 1.75rem)",
+                fontWeight: "700",
+                color: "#fff",
+                marginBottom: "3px",
+              }}
+            >
+              {category.label}
+            </h1>
+            <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.82rem" }}>
+              {isLoading
+                ? "Loading..."
+                : `${sorted.length} product${sorted.length !== 1 ? "s" : ""} found`}
+            </p>
+          </div>
         </div>
       </div>
 
       <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "24px 16px 64px",
-        }}
+        style={{ maxWidth: "1280px", margin: "0 auto", padding: "0 12px 40px" }}
       >
-        <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
+        <div style={{ display: "flex", gap: "8px", alignItems: "flex-start" }}>
           {/* Desktop sidebar */}
           <aside
-            style={{
-              width: "220px",
-              flexShrink: 0,
-              backgroundColor: "#fff",
-              border: "1px solid #ebebeb",
-              borderRadius: "12px",
-              padding: "20px",
-            }}
             className="cat-sidebar"
+            style={{
+              width: "200px",
+              flexShrink: 0,
+              backgroundColor: "var(--bg-card)",
+              border: "1px solid var(--border-light)",
+              borderRadius: "8px",
+              padding: "16px",
+              position: "sticky",
+              top: "80px",
+            }}
           >
-            <h3
+            <p
               style={{
-                fontSize: "0.9rem",
-                fontWeight: "700",
-                color: "#141414",
-                marginBottom: "16px",
+                fontSize: "0.85rem",
+                fontWeight: "800",
+                color: "var(--text-primary)",
+                marginBottom: "14px",
+                fontFamily: "DM Sans, sans-serif",
               }}
             >
               Filters
-            </h3>
+            </p>
             <Sidebar />
           </aside>
 
-          {/* Products */}
+          {/* Main content */}
           <div style={{ flex: 1, minWidth: 0 }}>
             {/* Toolbar */}
             <div
               style={{
+                backgroundColor: "var(--bg-card)",
+                border: "1px solid var(--border-light)",
+                borderRadius: "8px",
+                padding: "10px 14px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                marginBottom: "20px",
-                gap: "12px",
+                gap: "10px",
                 flexWrap: "wrap",
+                marginBottom: "8px",
               }}
             >
               <div
-                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  flexWrap: "wrap",
+                }}
               >
+                {/* Mobile filter btn */}
                 <button
                   onClick={() => setShowFilters(true)}
                   className="cat-filter-btn"
                   style={{
                     display: "none",
                     alignItems: "center",
-                    gap: "6px",
-                    padding: "8px 14px",
-                    backgroundColor: "#fff",
-                    border: "1.5px solid #e0e0e0",
-                    borderRadius: "7px",
-                    fontSize: "0.82rem",
-                    fontWeight: "500",
+                    gap: "5px",
+                    padding: "6px 12px",
+                    backgroundColor: "var(--bg-muted)",
+                    border: "1px solid var(--border-medium)",
+                    borderRadius: "6px",
+                    fontSize: "0.78rem",
+                    fontWeight: "600",
                     cursor: "pointer",
-                    color: "#3a3a3a",
+                    color: "var(--text-secondary)",
                   }}
                 >
                   <SlidersHorizontal
-                    style={{ width: "15px", height: "15px" }}
+                    style={{ width: "13px", height: "13px" }}
                   />{" "}
                   Filters
                 </button>
-                <p style={{ fontSize: "0.82rem", color: "#757575" }}>
-                  <span style={{ color: "#141414", fontWeight: "600" }}>
+
+                <p
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "var(--text-muted)",
+                    margin: 0,
+                  }}
+                >
+                  <span
+                    style={{ fontWeight: "700", color: "var(--text-primary)" }}
+                  >
                     {sorted.length}
                   </span>{" "}
-                  products
+                  results
                 </p>
               </div>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value)}
-                style={{
-                  backgroundColor: "#fff",
-                  border: "1.5px solid #e0e0e0",
-                  color: "#3a3a3a",
-                  fontSize: "0.82rem",
-                  borderRadius: "7px",
-                  padding: "8px 12px",
-                  outline: "none",
-                  cursor: "pointer",
-                }}
+
+              {/* Sort */}
+              <div
+                style={{ display: "flex", alignItems: "center", gap: "6px" }}
               >
-                {SORT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
+                <span
+                  style={{
+                    fontSize: "0.78rem",
+                    color: "var(--text-muted)",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Sort:
+                </span>
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value)}
+                  style={{
+                    border: "1px solid var(--border-medium)",
+                    borderRadius: "6px",
+                    fontSize: "0.78rem",
+                    padding: "6px 10px",
+                    backgroundColor: "var(--bg-card)",
+                    color: "var(--text-primary)",
+                    cursor: "pointer",
+                    outline: "none",
+                  }}
+                >
+                  {SORT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            {isLoading && <ProductSkeleton count={8} />}
+            {/* Products */}
+            {isLoading && <ProductSkeleton count={12} />}
+
             {isError && (
               <div
                 style={{
                   textAlign: "center",
-                  padding: "48px",
-                  color: "#757575",
+                  padding: "48px 16px",
+                  backgroundColor: "var(--bg-card)",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-light)",
                 }}
               >
-                Failed to load products.
+                <p style={{ fontSize: "2rem", marginBottom: "10px" }}>😕</p>
+                <p style={{ color: "var(--text-muted)" }}>
+                  Failed to load products. Please refresh.
+                </p>
               </div>
             )}
+
             {!isLoading && !isError && sorted.length === 0 && (
-              <div style={{ textAlign: "center", padding: "64px 16px" }}>
-                <p style={{ fontSize: "2.5rem", marginBottom: "12px" }}>🔍</p>
-                <p style={{ color: "#757575", marginBottom: "16px" }}>
+              <div
+                style={{
+                  textAlign: "center",
+                  padding: "64px 16px",
+                  backgroundColor: "var(--bg-card)",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-light)",
+                }}
+              >
+                <p style={{ fontSize: "2.5rem", marginBottom: "10px" }}>🔍</p>
+                <p style={{ color: "var(--text-muted)", marginBottom: "14px" }}>
                   No products match your filters.
                 </p>
                 <button
@@ -359,26 +443,100 @@ export default function CategoryPage() {
                     setMinRating(0);
                   }}
                   className="btn-outline"
-                  style={{ fontSize: "0.82rem" }}
+                  style={{ borderRadius: "6px", fontSize: "0.8rem" }}
                 >
                   Clear Filters
                 </button>
               </div>
             )}
+
             {!isLoading && sorted.length > 0 && (
               <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns:
-                    "repeat(auto-fill, minmax(min(100%, 190px), 1fr))",
-                  gap: "16px",
+                  backgroundColor: "var(--bg-card)",
+                  border: "1px solid var(--border-light)",
+                  borderRadius: "8px",
+                  overflow: "hidden",
                 }}
               >
-                {sorted.map((p) => (
-                  <ProductCard key={p.id} product={p} />
-                ))}
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(min(100%, 160px), 1fr))",
+                    gap: "1px",
+                    backgroundColor: "var(--border-light)",
+                  }}
+                >
+                  {sorted.map((p) => (
+                    <div
+                      key={p.id}
+                      style={{
+                        backgroundColor: "var(--bg-card)",
+                        padding: "8px",
+                      }}
+                    >
+                      <ProductCard product={p} />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* More categories */}
+      <div
+        style={{
+          borderTop: "1px solid var(--border-light)",
+          backgroundColor: "var(--bg-card)",
+          padding: "20px 16px",
+        }}
+      >
+        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
+          <p
+            style={{
+              fontSize: "0.82rem",
+              fontWeight: "700",
+              color: "var(--text-secondary)",
+              marginBottom: "12px",
+            }}
+          >
+            Browse Other Categories
+          </p>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+            {CATEGORIES.filter((c) => c.slug !== slug).map((cat) => (
+              <Link
+                key={cat.slug}
+                to={`/category/${cat.slug}`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "5px 12px",
+                  backgroundColor: "var(--bg-section)",
+                  border: "1px solid var(--border-light)",
+                  borderRadius: "99px",
+                  fontSize: "0.75rem",
+                  color: "var(--text-secondary)",
+                  textDecoration: "none",
+                  transition: "all 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "var(--brand-mid)";
+                  e.currentTarget.style.color = "var(--brand)";
+                  e.currentTarget.style.backgroundColor = "var(--brand-light)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "var(--border-light)";
+                  e.currentTarget.style.color = "var(--text-secondary)";
+                  e.currentTarget.style.backgroundColor = "var(--bg-section)";
+                }}
+              >
+                <span>{cat.icon}</span> {cat.label}
+              </Link>
+            ))}
           </div>
         </div>
       </div>
@@ -391,7 +549,7 @@ export default function CategoryPage() {
             style={{
               position: "fixed",
               inset: 0,
-              backgroundColor: "rgb(0 0 0 / 0.3)",
+              backgroundColor: "rgba(0,0,0,0.4)",
               zIndex: 200,
             }}
           />
@@ -401,12 +559,12 @@ export default function CategoryPage() {
               left: 0,
               top: 0,
               bottom: 0,
-              width: "280px",
+              width: "260px",
               zIndex: 201,
-              backgroundColor: "#fff",
+              backgroundColor: "var(--bg-card)",
               padding: "20px",
               overflowY: "auto",
-              boxShadow: "4px 0 24px rgb(0 0 0 / 0.1)",
+              boxShadow: "4px 0 24px rgba(0,0,0,0.15)",
             }}
           >
             <div
@@ -414,25 +572,26 @@ export default function CategoryPage() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                marginBottom: "20px",
+                marginBottom: "16px",
               }}
             >
-              <h3
+              <p
                 style={{
-                  fontSize: "1rem",
                   fontWeight: "700",
-                  color: "#141414",
+                  color: "var(--text-primary)",
+                  fontSize: "0.95rem",
+                  margin: 0,
                 }}
               >
                 Filters
-              </h3>
+              </p>
               <button
                 onClick={() => setShowFilters(false)}
                 style={{
                   background: "none",
                   border: "none",
                   cursor: "pointer",
-                  color: "#555",
+                  color: "var(--text-muted)",
                 }}
               >
                 <X style={{ width: "18px", height: "18px" }} />
@@ -443,64 +602,8 @@ export default function CategoryPage() {
         </>
       )}
 
-      {/* More categories */}
-      <div
-        style={{
-          borderTop: "1px solid #ebebeb",
-          backgroundColor: "#f9f9f9",
-          padding: "40px 16px",
-        }}
-      >
-        <div style={{ maxWidth: "1280px", margin: "0 auto" }}>
-          <h2
-            style={{
-              fontFamily: "Georgia, serif",
-              fontSize: "1.25rem",
-              fontWeight: "700",
-              color: "#141414",
-              marginBottom: "16px",
-            }}
-          >
-            More Categories
-          </h2>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {CATEGORIES.filter((c) => c.slug !== slug).map((cat) => (
-              <Link
-                key={cat.slug}
-                to={`/category/${cat.slug}`}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "7px 14px",
-                  backgroundColor: "#fff",
-                  border: "1px solid #e0e0e0",
-                  borderRadius: "99px",
-                  fontSize: "0.8rem",
-                  color: "#3a3a3a",
-                  textDecoration: "none",
-                  transition: "all 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "#4f7d52";
-                  e.currentTarget.style.color = "#4f7d52";
-                  e.currentTarget.style.backgroundColor = "#f4f7f4";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "#e0e0e0";
-                  e.currentTarget.style.color = "#3a3a3a";
-                  e.currentTarget.style.backgroundColor = "#fff";
-                }}
-              >
-                <span>{cat.icon}</span> {cat.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </div>
-
       <style>{`
-        @media (max-width: 767px) {
+        @media (max-width: 640px) {
           .cat-sidebar    { display: none !important; }
           .cat-filter-btn { display: flex !important; }
         }

@@ -10,18 +10,19 @@ export default function SearchPage() {
   const { data: results, isLoading } = useSearchProducts(query);
 
   return (
-    <div style={{ backgroundColor: "#fff", minHeight: "100vh" }}>
+    <div style={{ backgroundColor: "var(--bg-section)", minHeight: "100vh" }}>
+      {/* Header */}
       <div
         style={{
-          borderBottom: "1px solid #ebebeb",
-          backgroundColor: "#f9f9f9",
-          padding: "14px 16px",
+          backgroundColor: "var(--bg-card)",
+          borderBottom: "1px solid var(--border-light)",
         }}
       >
         <div
           style={{
             maxWidth: "1280px",
             margin: "0 auto",
+            padding: "12px 16px",
             display: "flex",
             alignItems: "center",
             gap: "12px",
@@ -30,32 +31,61 @@ export default function SearchPage() {
         >
           <Link
             to="/"
-            style={{ color: "#757575", display: "flex", alignItems: "center" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#4f7d52")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#757575")}
+            style={{
+              color: "var(--text-muted)",
+              display: "flex",
+              alignItems: "center",
+              textDecoration: "none",
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = "var(--text-muted)")
+            }
           >
             <ArrowLeft style={{ width: "18px", height: "18px" }} />
           </Link>
           <div>
             <h1
               style={{
-                fontFamily: "Georgia, serif",
-                fontSize: "clamp(1.25rem, 3vw, 1.75rem)",
-                fontWeight: "700",
-                color: "#141414",
+                fontFamily: "DM Sans, sans-serif",
+                fontSize: "1rem",
+                fontWeight: "800",
+                color: "var(--text-primary)",
+                margin: 0,
               }}
             >
               Search Results
             </h1>
             <p
-              style={{ fontSize: "0.8rem", color: "#757575", marginTop: "2px" }}
+              style={{
+                fontSize: "0.78rem",
+                color: "var(--text-muted)",
+                margin: 0,
+                marginTop: "1px",
+              }}
             >
-              {isLoading ? "Searching..." : `${results?.length || 0} results`}
-              {!isLoading && query && (
-                <span style={{ color: "#4f7d52", fontWeight: "500" }}>
-                  {" "}
-                  for "{query}"
-                </span>
+              {isLoading ? (
+                "Searching..."
+              ) : (
+                <>
+                  <span
+                    style={{ fontWeight: "700", color: "var(--text-primary)" }}
+                  >
+                    {results?.length || 0}
+                  </span>{" "}
+                  result{results?.length !== 1 ? "s" : ""}
+                  {query && (
+                    <>
+                      {" "}
+                      for{" "}
+                      <span
+                        style={{ color: "var(--brand)", fontWeight: "600" }}
+                      >
+                        "{query}"
+                      </span>
+                    </>
+                  )}
+                </>
               )}
             </p>
           </div>
@@ -66,69 +96,105 @@ export default function SearchPage() {
         style={{
           maxWidth: "1280px",
           margin: "0 auto",
-          padding: "28px 16px 64px",
+          padding: "12px 12px 48px",
         }}
       >
+        {/* No query */}
         {!query && (
           <div style={{ textAlign: "center", padding: "80px 16px" }}>
             <Search
               style={{
                 width: "48px",
                 height: "48px",
-                color: "#c8c8c8",
+                color: "var(--text-subtle)",
                 margin: "0 auto 12px",
               }}
             />
-            <p style={{ color: "#a0a0a0", fontSize: "1rem" }}>
+            <p style={{ color: "var(--text-muted)", fontSize: "1rem" }}>
               Enter a search term to find products
             </p>
           </div>
         )}
-        {query && isLoading && <ProductSkeleton count={8} />}
+
+        {/* Loading */}
+        {query && isLoading && <ProductSkeleton count={10} />}
+
+        {/* No results */}
         {query && !isLoading && results?.length === 0 && (
-          <div style={{ textAlign: "center", padding: "80px 16px" }}>
+          <div
+            style={{
+              textAlign: "center",
+              padding: "80px 16px",
+              backgroundColor: "var(--bg-card)",
+              borderRadius: "8px",
+              border: "1px solid var(--border-light)",
+            }}
+          >
             <Search
               style={{
-                width: "48px",
-                height: "48px",
-                color: "#c8c8c8",
+                width: "40px",
+                height: "40px",
+                color: "var(--text-subtle)",
                 margin: "0 auto 12px",
               }}
             />
             <h2
               style={{
                 fontFamily: "Georgia, serif",
-                fontSize: "1.5rem",
-                color: "#141414",
+                fontSize: "1.25rem",
+                color: "var(--text-primary)",
                 marginBottom: "8px",
               }}
             >
-              No results found
+              No results for "{query}"
             </h2>
-            <p style={{ color: "#757575", marginBottom: "20px" }}>
-              Try different keywords or browse our categories.
+            <p
+              style={{
+                color: "var(--text-muted)",
+                marginBottom: "20px",
+                fontSize: "0.875rem",
+              }}
+            >
+              Try different keywords or browse our categories
             </p>
             <Link
               to="/"
               className="btn-primary"
-              style={{ borderRadius: "8px" }}
+              style={{ borderRadius: "6px" }}
             >
               Back to Home
             </Link>
           </div>
         )}
+
+        {/* Results */}
         {results?.length > 0 && (
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fill, minmax(min(100%, 200px), 1fr))",
-              gap: "16px",
+              backgroundColor: "var(--bg-card)",
+              border: "1px solid var(--border-light)",
+              borderRadius: "8px",
+              overflow: "hidden",
             }}
           >
-            {results.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(min(100%, 160px), 1fr))",
+                gap: "1px",
+                backgroundColor: "var(--border-light)",
+              }}
+            >
+              {results.map((p) => (
+                <div
+                  key={p.id}
+                  style={{ backgroundColor: "var(--bg-card)", padding: "8px" }}
+                >
+                  <ProductCard product={p} />
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

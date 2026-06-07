@@ -1,10 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
-import { api } from '../api/products'
+import { api } from '../api/products.js'
 
-export const useFeaturedProducts = (limit = 12) =>
-  useQuery({ queryKey: ['featured', limit], queryFn: () => api.getFeaturedProducts(limit) })
+export const useFeaturedProducts = (limit = 20) =>
+  useQuery({
+    queryKey: ['featured', limit],
+    queryFn: () => api.getFeaturedProducts(limit),
+  })
 
-export const useProductsByCategory = (slug, limit = 30, skip = 0) =>
+export const useProductsByCategory = (slug, limit = 100, skip = 0) =>
   useQuery({
     queryKey: ['category', slug, limit, skip],
     queryFn:  () => api.getProductsByCategory(slug, limit, skip),

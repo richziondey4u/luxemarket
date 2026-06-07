@@ -1,84 +1,60 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import {
-  Zap,
-  ShoppingCart,
-  Heart,
-  Star,
-  ArrowRight,
-  Clock,
-  Filter,
-  X,
-} from "lucide-react";
+import { Zap, Clock, ChevronRight, SlidersHorizontal, X } from "lucide-react";
 import { useFeaturedProducts } from "../hooks/useProducts.js";
-import { useCart } from "../context/CartContext.jsx";
-import { useWishlist } from "../context/WishlistContext.jsx";
-import { formatPrice, discountedPrice } from "../api/products.js";
-import { truncate } from "../lib/utils.js";
+import ProductCard from "../components/product/ProductCard.jsx";
+import ProductSkeleton from "../components/product/ProductSkeleton.jsx";
 
-/* ── Countdown hook ── */
-function useCountdown(targetHours = 8) {
-  const getInitial = useCallback(() => {
-    const saved = sessionStorage.getItem("flash_sale_end");
+/* ── Countdown ── */
+function useCountdown(hours = 8) {
+  const getMs = () => {
+    const saved = sessionStorage.getItem("flash_end");
     if (saved) {
       const diff = parseInt(saved) - Date.now();
       if (diff > 0) return diff;
     }
-    const end = Date.now() + targetHours * 60 * 60 * 1000;
-    sessionStorage.setItem("flash_sale_end", end.toString());
-    return targetHours * 60 * 60 * 1000;
-  }, [targetHours]);
-
-  const [ms, setMs] = useState(getInitial);
-
+    const end = Date.now() + hours * 3_600_000;
+    sessionStorage.setItem("flash_end", end.toString());
+    return hours * 3_600_000;
+  };
+  const [ms, setMs] = useState(getMs);
   useEffect(() => {
-    const t = setInterval(() => {
-      setMs((prev) => {
-        if (prev <= 1000) {
-          sessionStorage.removeItem("flash_sale_end");
-          return 0;
-        }
-        return prev - 1000;
-      });
-    }, 1000);
+    const t = setInterval(() => setMs((p) => (p <= 1000 ? 0 : p - 1000)), 1000);
     return () => clearInterval(t);
   }, []);
-
-  const h = Math.floor(ms / 3_600_000);
-  const m = Math.floor((ms % 3_600_000) / 60_000);
-  const s = Math.floor((ms % 60_000) / 1000);
-  return { h, m, s, expired: ms === 0 };
+  return {
+    h: String(Math.floor(ms / 3_600_000)).padStart(2, "0"),
+    m: String(Math.floor((ms % 3_600_000) / 60_000)).padStart(2, "0"),
+    s: String(Math.floor((ms % 60_000) / 1000)).padStart(2, "0"),
+    expired: ms === 0,
+  };
 }
 
-function TimeBox({ value, label }) {
+function TimeBlock({ value, label }) {
   return (
     <div style={{ textAlign: "center" }}>
       <div
         style={{
-          width: "64px",
-          height: "64px",
-          backgroundColor: "#4f7d52",
-          borderRadius: "10px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "1.6rem",
-          fontWeight: "700",
-          color: "#fff",
+          backgroundColor: "rgba(0,0,0,0.35)",
+          borderRadius: "6px",
+          padding: "6px 12px",
+          minWidth: "52px",
           fontFamily: "DM Sans, sans-serif",
-          boxShadow: "0 4px 12px rgba(79,125,82,0.25)",
+          fontSize: "1.5rem",
+          fontWeight: "800",
+          color: "#fff",
+          lineHeight: 1,
         }}
       >
-        {String(value).padStart(2, "0")}
+        {value}
       </div>
       <p
         style={{
-          fontSize: "0.65rem",
-          color: "#757575",
-          marginTop: "5px",
+          fontSize: "0.6rem",
+          color: "rgba(255,255,255,0.65)",
+          marginTop: "4px",
           textTransform: "uppercase",
           letterSpacing: "0.06em",
-          fontWeight: "600",
         }}
       >
         {label}
@@ -87,18 +63,23 @@ function TimeBox({ value, label }) {
   );
 }
 
-const DISCOUNT_FILTERS = [
+const DISCOUNT_TABS = [
   { label: "All Deals", min: 0 },
   { label: "10%+ Off", min: 10 },
   { label: "20%+ Off", min: 20 },
   { label: "30%+ Off", min: 30 },
 ];
 
+const SORT_OPTIONS = [
+  { value: "discount", label: "Biggest Discount" },
+  { value: "price-asc", label: "Price: Low → High" },
+  { value: "price-desc", label: "Price: High → Low" },
+  { value: "rating", label: "Top Rated" },
+];
+
 export default function FlashSalePage() {
   const { h, m, s, expired } = useCountdown(8);
   const { data: products = [], isLoading } = useFeaturedProducts(30);
-  const { addItem } = useCart();
-  const { toggle, isWishlisted } = useWishlist();
 
   const [minDiscount, setMinDiscount] = useState(0);
   const [sort, setSort] = useState("discount");
@@ -116,52 +97,42 @@ export default function FlashSalePage() {
     });
 
   return (
-    <div style={{ backgroundColor: "#fff", minHeight: "100vh" }}>
+    <div style={{ backgroundColor: "var(--bg-section)", minHeight: "100vh" }}>
       {/* ── Hero banner ── */}
       <div
         style={{
           background:
-            "linear-gradient(135deg, #1a3a1c 0%, #2d5a30 50%, #1a3a1c 100%)",
-          padding: "clamp(36px, 6vw, 64px) 16px",
+            "linear-gradient(135deg, #1a0a00 0%, #7c1d00 50%, #c2410c 100%)",
+          padding: "clamp(28px, 5vw, 56px) 16px",
           position: "relative",
           overflow: "hidden",
         }}
       >
-        {/* Background pattern */}
+        {/* Dot pattern */}
         <div
           style={{
             position: "absolute",
             inset: 0,
-            opacity: 0.06,
+            opacity: 0.07,
             backgroundImage:
               "radial-gradient(circle, #fff 1px, transparent 1px)",
-            backgroundSize: "24px 24px",
+            backgroundSize: "20px 20px",
+            pointerEvents: "none",
           }}
         />
 
-        {/* Glow orbs */}
+        {/* Glow orb */}
         <div
           style={{
             position: "absolute",
-            top: "-60px",
-            left: "-60px",
-            width: "200px",
-            height: "200px",
-            backgroundColor: "rgba(114,164,116,0.15)",
+            top: "-80px",
+            right: "-80px",
+            width: "300px",
+            height: "300px",
+            backgroundColor: "rgba(251,146,60,0.2)",
             borderRadius: "50%",
-            filter: "blur(40px)",
-          }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            bottom: "-60px",
-            right: "-60px",
-            width: "200px",
-            height: "200px",
-            backgroundColor: "rgba(251,191,36,0.1)",
-            borderRadius: "50%",
-            filter: "blur(40px)",
+            filter: "blur(60px)",
+            pointerEvents: "none",
           }}
         />
 
@@ -176,53 +147,44 @@ export default function FlashSalePage() {
           {/* Badge */}
           <div
             style={{
-              display: "flex",
+              display: "inline-flex",
               alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
+              gap: "6px",
+              backgroundColor: "rgba(251,146,60,0.25)",
+              border: "1px solid rgba(251,146,60,0.5)",
+              borderRadius: "99px",
+              padding: "5px 14px",
               marginBottom: "16px",
             }}
           >
-            <div
+            <Zap
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "7px",
-                backgroundColor: "rgba(251,191,36,0.2)",
-                border: "1px solid rgba(251,191,36,0.4)",
-                borderRadius: "99px",
-                padding: "5px 14px",
+                width: "12px",
+                height: "12px",
+                color: "#fb923c",
+                fill: "#fb923c",
+              }}
+            />
+            <span
+              style={{
+                fontSize: "0.68rem",
+                fontWeight: "800",
+                color: "#fb923c",
+                letterSpacing: "0.1em",
               }}
             >
-              <Zap
-                style={{
-                  width: "13px",
-                  height: "13px",
-                  color: "#fbbf24",
-                  fill: "#fbbf24",
-                }}
-              />
-              <span
-                style={{
-                  fontSize: "0.72rem",
-                  fontWeight: "700",
-                  color: "#fbbf24",
-                  letterSpacing: "0.08em",
-                }}
-              >
-                LIMITED TIME OFFER
-              </span>
-            </div>
+              LIMITED TIME OFFER
+            </span>
           </div>
 
           <h1
             style={{
-              fontFamily: "Playfair Display, Georgia, serif",
-              fontSize: "clamp(2rem, 6vw, 3.5rem)",
+              fontFamily: "Georgia, serif",
+              fontSize: "clamp(1.75rem, 5vw, 3rem)",
               fontWeight: "700",
-              color: "#ffffff",
-              lineHeight: "1.15",
-              marginBottom: "12px",
+              color: "#fff",
+              marginBottom: "8px",
+              lineHeight: 1.2,
             }}
           >
             ⚡ Flash Sale
@@ -230,11 +192,11 @@ export default function FlashSalePage() {
           <p
             style={{
               color: "rgba(255,255,255,0.7)",
-              fontSize: "1rem",
-              marginBottom: "32px",
+              fontSize: "clamp(0.82rem, 2vw, 1rem)",
+              marginBottom: "28px",
             }}
           >
-            Massive discounts on top products — grab them before time runs out!
+            Massive discounts — grab them before time runs out!
           </p>
 
           {/* Countdown */}
@@ -242,13 +204,13 @@ export default function FlashSalePage() {
             <div
               style={{
                 display: "inline-block",
-                backgroundColor: "rgba(239,68,68,0.2)",
-                border: "1px solid rgba(239,68,68,0.4)",
-                borderRadius: "12px",
-                padding: "12px 24px",
+                backgroundColor: "rgba(239,68,68,0.25)",
+                border: "1px solid rgba(239,68,68,0.5)",
+                borderRadius: "10px",
+                padding: "10px 24px",
                 color: "#fca5a5",
-                fontWeight: "600",
-                fontSize: "0.95rem",
+                fontWeight: "700",
+                fontSize: "0.9rem",
               }}
             >
               ⏰ Sale has ended — check back soon!
@@ -258,12 +220,20 @@ export default function FlashSalePage() {
               <p
                 style={{
                   color: "rgba(255,255,255,0.5)",
-                  fontSize: "0.78rem",
-                  marginBottom: "12px",
+                  fontSize: "0.72rem",
+                  marginBottom: "10px",
                   textTransform: "uppercase",
-                  letterSpacing: "0.06em",
+                  letterSpacing: "0.08em",
                 }}
               >
+                <Clock
+                  style={{
+                    width: "11px",
+                    height: "11px",
+                    display: "inline",
+                    marginRight: "4px",
+                  }}
+                />
                 Sale ends in
               </p>
               <div
@@ -271,33 +241,32 @@ export default function FlashSalePage() {
                   display: "flex",
                   alignItems: "flex-start",
                   justifyContent: "center",
-                  gap: "12px",
-                  flexWrap: "wrap",
+                  gap: "10px",
                 }}
               >
-                <TimeBox value={h} label="Hours" />
-                <div
+                <TimeBlock value={h} label="Hours" />
+                <span
                   style={{
-                    fontSize: "1.8rem",
-                    fontWeight: "700",
-                    color: "#ffffff",
-                    marginTop: "12px",
+                    fontSize: "1.5rem",
+                    fontWeight: "800",
+                    color: "#fb923c",
+                    marginTop: "6px",
                   }}
                 >
                   :
-                </div>
-                <TimeBox value={m} label="Minutes" />
-                <div
+                </span>
+                <TimeBlock value={m} label="Minutes" />
+                <span
                   style={{
-                    fontSize: "1.8rem",
-                    fontWeight: "700",
-                    color: "#ffffff",
-                    marginTop: "12px",
+                    fontSize: "1.5rem",
+                    fontWeight: "800",
+                    color: "#fb923c",
+                    marginTop: "6px",
                   }}
                 >
                   :
-                </div>
-                <TimeBox value={s} label="Seconds" />
+                </span>
+                <TimeBlock value={s} label="Seconds" />
               </div>
             </div>
           )}
@@ -308,34 +277,35 @@ export default function FlashSalePage() {
               display: "flex",
               justifyContent: "center",
               gap: "32px",
-              marginTop: "36px",
+              marginTop: "28px",
               flexWrap: "wrap",
             }}
           >
             {[
-              { value: saleProducts.length + "+", label: "Products on Sale" },
-              { value: "Up to 70%", label: "Discount" },
-              { value: "Free", label: "Delivery over ₦50k" },
+              { v: `${saleProducts.length}+`, l: "Products on Sale" },
+              { v: "Up to 70%", l: "Discount" },
+              { v: "Free", l: "Delivery over ₦50k" },
             ].map((s, i) => (
               <div key={i} style={{ textAlign: "center" }}>
                 <p
                   style={{
-                    color: "#ffffff",
-                    fontWeight: "700",
-                    fontSize: "1.1rem",
-                    fontFamily: "Georgia, serif",
+                    color: "#fff",
+                    fontWeight: "800",
+                    fontSize: "1rem",
+                    fontFamily: "DM Sans, sans-serif",
+                    margin: "0 0 2px",
                   }}
                 >
-                  {s.value}
+                  {s.v}
                 </p>
                 <p
                   style={{
                     color: "rgba(255,255,255,0.5)",
-                    fontSize: "0.75rem",
-                    marginTop: "2px",
+                    fontSize: "0.72rem",
+                    margin: 0,
                   }}
                 >
-                  {s.label}
+                  {s.l}
                 </p>
               </div>
             ))}
@@ -343,15 +313,15 @@ export default function FlashSalePage() {
         </div>
       </div>
 
-      {/* ── Filters bar ── */}
+      {/* ── Sticky filter bar ── */}
       <div
         style={{
-          borderBottom: "1px solid #ebebeb",
-          backgroundColor: "#f9f9f9",
-          padding: "14px 16px",
+          backgroundColor: "var(--bg-card)",
+          borderBottom: "1px solid var(--border-light)",
           position: "sticky",
           top: "60px",
           zIndex: 40,
+          padding: "10px 16px",
         }}
       >
         <div
@@ -361,72 +331,73 @@ export default function FlashSalePage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: "12px",
+            gap: "10px",
             flexWrap: "wrap",
           }}
         >
-          {/* Discount filters */}
+          {/* Discount tabs */}
           <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-            {DISCOUNT_FILTERS.map((f) => (
+            {DISCOUNT_TABS.map((tab) => (
               <button
-                key={f.min}
-                onClick={() => setMinDiscount(f.min)}
+                key={tab.min}
+                onClick={() => setMinDiscount(tab.min)}
                 style={{
-                  padding: "6px 14px",
+                  padding: "5px 14px",
                   borderRadius: "99px",
-                  fontSize: "0.78rem",
+                  fontSize: "0.75rem",
                   fontWeight: "600",
                   border: "1.5px solid",
                   cursor: "pointer",
-                  transition: "all 0.2s",
-                  backgroundColor: minDiscount === f.min ? "#4f7d52" : "#fff",
-                  borderColor: minDiscount === f.min ? "#4f7d52" : "#e0e0e0",
-                  color: minDiscount === f.min ? "#fff" : "#555555",
+                  transition: "all 0.15s",
+                  backgroundColor:
+                    minDiscount === tab.min ? "#f97316" : "var(--bg-muted)",
+                  borderColor:
+                    minDiscount === tab.min
+                      ? "#f97316"
+                      : "var(--border-medium)",
+                  color:
+                    minDiscount === tab.min ? "#fff" : "var(--text-secondary)",
                 }}
               >
-                {f.label}
+                {tab.label}
               </button>
             ))}
           </div>
-          {/* Sort */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+
+          {/* Sort + count */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <span
               style={{
-                fontSize: "0.78rem",
-                color: "#757575",
+                fontSize: "0.75rem",
+                color: "var(--text-muted)",
                 whiteSpace: "nowrap",
               }}
             >
-              Sort by:
+              <span style={{ fontWeight: "700", color: "var(--text-primary)" }}>
+                {saleProducts.length}
+              </span>{" "}
+              deals
             </span>
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
               style={{
-                border: "1.5px solid #e0e0e0",
-                borderRadius: "7px",
-                fontSize: "0.78rem",
-                padding: "6px 10px",
-                backgroundColor: "#fff",
-                color: "#3a3a3a",
+                border: "1px solid var(--border-medium)",
+                borderRadius: "6px",
+                fontSize: "0.75rem",
+                padding: "5px 10px",
+                backgroundColor: "var(--bg-card)",
+                color: "var(--text-primary)",
                 cursor: "pointer",
                 outline: "none",
               }}
             >
-              <option value="discount">Biggest Discount</option>
-              <option value="price-asc">Price: Low → High</option>
-              <option value="price-desc">Price: High → Low</option>
-              <option value="rating">Top Rated</option>
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
             </select>
-            <span
-              style={{
-                fontSize: "0.78rem",
-                color: "#a0a0a0",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {saleProducts.length} items
-            </span>
           </div>
         </div>
       </div>
@@ -436,70 +407,45 @@ export default function FlashSalePage() {
         style={{
           maxWidth: "1280px",
           margin: "0 auto",
-          padding: "28px 16px 72px",
+          padding: "12px 12px 56px",
         }}
       >
         {isLoading ? (
+          <ProductSkeleton count={12} />
+        ) : saleProducts.length === 0 ? (
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fill, minmax(min(100%, 200px), 1fr))",
-              gap: "16px",
+              textAlign: "center",
+              padding: "80px 16px",
+              backgroundColor: "var(--bg-card)",
+              borderRadius: "8px",
+              border: "1px solid var(--border-light)",
             }}
           >
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div
-                key={i}
-                style={{
-                  backgroundColor: "#fff",
-                  border: "1px solid #ebebeb",
-                  borderRadius: "12px",
-                  overflow: "hidden",
-                }}
-              >
-                <div style={{ aspectRatio: "1" }} className="shimmer-bg" />
-                <div
-                  style={{
-                    padding: "12px",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                  }}
-                >
-                  <div
-                    style={{ height: "10px", width: "40%" }}
-                    className="shimmer-bg"
-                  />
-                  <div
-                    style={{ height: "14px", width: "90%" }}
-                    className="shimmer-bg"
-                  />
-                  <div
-                    style={{ height: "18px", width: "50%" }}
-                    className="shimmer-bg"
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : saleProducts.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "80px 16px" }}>
-            <p style={{ fontSize: "2.5rem", marginBottom: "12px" }}>😔</p>
+            <p style={{ fontSize: "2.5rem", marginBottom: "10px" }}>😔</p>
             <h3
               style={{
                 fontFamily: "Georgia, serif",
-                fontSize: "1.25rem",
-                color: "#141414",
-                marginBottom: "8px",
+                fontSize: "1.15rem",
+                color: "var(--text-primary)",
+                marginBottom: "6px",
               }}
             >
               No deals at this discount level
             </h3>
+            <p
+              style={{
+                color: "var(--text-muted)",
+                fontSize: "0.85rem",
+                marginBottom: "14px",
+              }}
+            >
+              Try a lower discount filter to see more products
+            </p>
             <button
               onClick={() => setMinDiscount(0)}
               className="btn-outline"
-              style={{ marginTop: "12px", borderRadius: "8px" }}
+              style={{ borderRadius: "6px", fontSize: "0.8rem" }}
             >
               Show All Deals
             </button>
@@ -507,276 +453,95 @@ export default function FlashSalePage() {
         ) : (
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns:
-                "repeat(auto-fill, minmax(min(100%, 200px), 1fr))",
-              gap: "16px",
+              backgroundColor: "var(--bg-card)",
+              border: "1px solid var(--border-light)",
+              borderRadius: "8px",
+              overflow: "hidden",
             }}
           >
-            {saleProducts.map((product) => {
-              const finalPrice = discountedPrice(
-                product.price,
-                product.discountPercentage,
-              );
-              const savings = product.price - finalPrice;
-              const wishlisted = isWishlisted(product.id);
+            {/* Section header */}
+            <div
+              style={{
+                background: "linear-gradient(90deg, #f97316, #ea580c)",
+                padding: "10px 16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <h2
+                style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.95rem",
+                  fontWeight: "800",
+                  color: "#fff",
+                  margin: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                }}
+              >
+                <Zap style={{ width: "15px", height: "15px", fill: "#fff" }} />
+                Flash Deals · {saleProducts.length} items
+              </h2>
+              <Link
+                to="/"
+                style={{
+                  fontSize: "0.72rem",
+                  fontWeight: "700",
+                  color: "#fff",
+                  textDecoration: "none",
+                  backgroundColor: "rgba(255,255,255,0.2)",
+                  padding: "3px 10px",
+                  borderRadius: "99px",
+                }}
+              >
+                Keep Shopping →
+              </Link>
+            </div>
 
-              return (
+            {/* Grid */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns:
+                  "repeat(auto-fill, minmax(min(100%, 160px), 1fr))",
+                gap: "1px",
+                backgroundColor: "var(--border-light)",
+              }}
+            >
+              {saleProducts.map((p) => (
                 <div
-                  key={product.id}
-                  style={{
-                    backgroundColor: "#fff",
-                    border: "1px solid #ebebeb",
-                    borderRadius: "12px",
-                    overflow: "hidden",
-                    transition: "all 0.25s",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.05)",
-                    position: "relative",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-4px)";
-                    e.currentTarget.style.boxShadow =
-                      "0 8px 28px rgba(0,0,0,0.1)";
-                    e.currentTarget.style.borderColor = "#a3c4a5";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow =
-                      "0 1px 4px rgba(0,0,0,0.05)";
-                    e.currentTarget.style.borderColor = "#ebebeb";
-                  }}
+                  key={p.id}
+                  style={{ backgroundColor: "var(--bg-card)", padding: "8px" }}
                 >
-                  {/* Discount ribbon */}
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "12px",
-                      left: "0",
-                      zIndex: 2,
-                      backgroundColor: "#ef4444",
-                      color: "#fff",
-                      fontSize: "0.68rem",
-                      fontWeight: "700",
-                      padding: "3px 10px 3px 8px",
-                      borderRadius: "0 99px 99px 0",
-                      boxShadow: "2px 2px 6px rgba(239,68,68,0.3)",
-                      letterSpacing: "0.03em",
-                    }}
-                  >
-                    ⚡ -{Math.round(product.discountPercentage)}%
-                  </div>
-
-                  {/* Image */}
-                  <div
-                    style={{
-                      position: "relative",
-                      aspectRatio: "1",
-                      overflow: "hidden",
-                      backgroundColor: "#f7f7f7",
-                    }}
-                  >
-                    <img
-                      src={product.thumbnail}
-                      alt={product.title}
-                      loading="lazy"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        transition: "transform 0.5s",
-                      }}
-                      onMouseEnter={(e) =>
-                        (e.currentTarget.style.transform = "scale(1.06)")
-                      }
-                      onMouseLeave={(e) =>
-                        (e.currentTarget.style.transform = "scale(1)")
-                      }
-                    />
-                    {/* Wishlist */}
-                    <button
-                      onClick={() => toggle(product)}
-                      style={{
-                        position: "absolute",
-                        top: "8px",
-                        right: "8px",
-                        width: "30px",
-                        height: "30px",
-                        borderRadius: "50%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border:
-                          "1.5px solid " + (wishlisted ? "#f43f5e" : "#e0e0e0"),
-                        backgroundColor: wishlisted ? "#fff1f2" : "#fff",
-                        color: wishlisted ? "#f43f5e" : "#a0a0a0",
-                        cursor: "pointer",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      <Heart
-                        style={{
-                          width: "13px",
-                          height: "13px",
-                          fill: wishlisted ? "#f43f5e" : "none",
-                        }}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Info */}
-                  <div style={{ padding: "12px 14px 14px" }}>
-                    <p
-                      style={{
-                        fontSize: "0.68rem",
-                        color: "#a0a0a0",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        marginBottom: "3px",
-                        fontWeight: "500",
-                      }}
-                    >
-                      {product.brand || product.category}
-                    </p>
-                    <Link
-                      to={"/product/" + product.id}
-                      style={{ textDecoration: "none" }}
-                    >
-                      <p
-                        style={{
-                          fontSize: "0.85rem",
-                          fontWeight: "500",
-                          color: "#242424",
-                          lineHeight: "1.35",
-                          marginBottom: "6px",
-                          transition: "color 0.2s",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.color = "#4f7d52")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.color = "#242424")
-                        }
-                      >
-                        {truncate(product.title, 40)}
-                      </p>
-                    </Link>
-
-                    {/* Stars */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "3px",
-                        marginBottom: "9px",
-                      }}
-                    >
-                      {Array.from({ length: 5 }, (_, i) => (
-                        <Star
-                          key={i}
-                          style={{
-                            width: "11px",
-                            height: "11px",
-                            fill:
-                              i < Math.floor(product.rating)
-                                ? "#fbbf24"
-                                : "none",
-                            color:
-                              i < Math.floor(product.rating)
-                                ? "#fbbf24"
-                                : "#d4d4d4",
-                          }}
-                        />
-                      ))}
-                      <span
-                        style={{
-                          fontSize: "0.7rem",
-                          color: "#a0a0a0",
-                          marginLeft: "2px",
-                        }}
-                      >
-                        ({product.reviews?.length || 0})
-                      </span>
-                    </div>
-
-                    {/* Price */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: "6px",
-                      }}
-                    >
-                      <div>
-                        <span
-                          style={{
-                            fontWeight: "700",
-                            color: "#141414",
-                            fontSize: "0.95rem",
-                            display: "block",
-                          }}
-                        >
-                          {formatPrice(finalPrice)}
-                        </span>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "5px",
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: "0.72rem",
-                              color: "#a0a0a0",
-                              textDecoration: "line-through",
-                            }}
-                          >
-                            {formatPrice(product.price)}
-                          </span>
-                          <span
-                            style={{
-                              fontSize: "0.68rem",
-                              color: "#ef4444",
-                              fontWeight: "600",
-                            }}
-                          >
-                            Save {formatPrice(savings)}
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => addItem(product)}
-                        style={{
-                          width: "34px",
-                          height: "34px",
-                          flexShrink: 0,
-                          backgroundColor: "#4f7d52",
-                          border: "none",
-                          borderRadius: "8px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          color: "#fff",
-                          cursor: "pointer",
-                          transition: "background-color 0.2s",
-                        }}
-                        onMouseEnter={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#3d6440")
-                        }
-                        onMouseLeave={(e) =>
-                          (e.currentTarget.style.backgroundColor = "#4f7d52")
-                        }
-                      >
-                        <ShoppingCart
-                          style={{ width: "15px", height: "15px" }}
-                        />
-                      </button>
-                    </div>
-                  </div>
+                  <ProductCard product={p} />
                 </div>
-              );
-            })}
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Bottom CTA */}
+        {!isLoading && saleProducts.length > 0 && (
+          <div style={{ textAlign: "center", marginTop: "24px" }}>
+            <p
+              style={{
+                fontSize: "0.82rem",
+                color: "var(--text-muted)",
+                marginBottom: "12px",
+              }}
+            >
+              Want to see more deals?
+            </p>
+            <Link
+              to="/"
+              className="btn-primary"
+              style={{ borderRadius: "6px" }}
+            >
+              Browse All Products{" "}
+              <ChevronRight style={{ width: "15px", height: "15px" }} />
+            </Link>
           </div>
         )}
       </div>

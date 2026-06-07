@@ -107,7 +107,7 @@ export const CATEGORIES = [
 ];
 
 export const getCategoryBySlug = (slug) =>
-  CATEGORIES.find((c) => c.slug === slug);
+  CATEGORIES.find(c => c.slug === slug || c.apiCategory === slug)
 
 // ─── API functions ───────────────────────────────────────────────────────────
 // Replace BASE and paths with your own backend when ready
@@ -118,9 +118,13 @@ export const api = {
     get(`${BASE}/products?limit=${limit}&skip=0`).then((d) => d.products),
 
   // GET /api/products?category=slug&limit=n&skip=n
-  getProductsByCategory: (slug, limit = 30, skip = 0) => {
+  getProductsByCategory: async (slug, limit = 100, skip = 0) => {
     const cat = CATEGORIES.find((c) => c.slug === slug)?.apiCategory || slug;
-    return get(`${BASE}/products/category/${cat}?limit=${limit}&skip=${skip}`);
+    // DummyJSON max limit is 194
+    const data = await get(
+      `${BASE}/products/category/${cat}?limit=${limit}&skip=${skip}`,
+    );
+    return data;
   },
 
   // GET /api/products/:id
@@ -141,11 +145,12 @@ export const api = {
     get(`${BASE}/products?limit=8&skip=5`).then((d) => d.products),
 
   // GET /api/products?category=slug&exclude=id&limit=4
-  getRelatedProducts: (slug, excludeId) => {
-    const cat = CATEGORIES.find((c) => c.slug === slug)?.apiCategory || slug;
-    return get(`${BASE}/products/category/${cat}?limit=8`).then((d) =>
-      d.products.filter((p) => p.id !== Number(excludeId)).slice(0, 4),
-    );
+  getRelatedProducts: async (slug, excludeId) => {
+    const cat =
+      CATEGORIES.find((c) => c.slug === slug || c.apiCategory === slug)
+        ?.apiCategory || slug;
+    const data = await get(`${BASE}/products/category/${cat}?limit=20`);
+    return data.products.filter((p) => p.id !== Number(excludeId)).slice(0, 6);
   },
 };
 

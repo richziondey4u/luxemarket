@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ShoppingCart, Heart, Star, Eye } from "lucide-react";
+import { ShoppingCart, Heart, Star } from "lucide-react";
 import { useCart } from "../../context/CartContext.jsx";
 import { useWishlist } from "../../context/WishlistContext.jsx";
 import { formatPrice, discountedPrice } from "../../api/products.js";
@@ -9,28 +9,29 @@ export default function ProductCard({ product }) {
   const { addItem } = useCart();
   const { toggle, isWishlisted } = useWishlist();
   const wishlisted = isWishlisted(product.id);
-  const finalPrice = discountedPrice(product.price, product.discountPercentage);
+  const final = discountedPrice(product.price, product.discountPercentage);
 
   return (
     <div
       style={{
-        backgroundColor: "#fff",
-        border: "1px solid #ebebeb",
-        borderRadius: "12px",
+        backgroundColor: "var(--bg-card)",
+        border: "1px solid var(--border-light)",
+        borderRadius: "8px",
         overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        transition: "all 0.2s",
         cursor: "pointer",
-        transition: "all 0.25s",
-        boxShadow: "0 1px 4px rgb(0 0 0 / 0.05)",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-4px)";
-        e.currentTarget.style.boxShadow = "0 8px 28px rgb(0 0 0 / 0.1)";
-        e.currentTarget.style.borderColor = "#a3c4a5";
+        e.currentTarget.style.boxShadow = "0 4px 16px rgba(0,0,0,0.1)";
+        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.borderColor = "var(--brand-mid)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "0 1px 4px rgb(0 0 0 / 0.05)";
-        e.currentTarget.style.borderColor = "#ebebeb";
+        e.currentTarget.style.boxShadow = "none";
+        e.currentTarget.style.transform = "none";
+        e.currentTarget.style.borderColor = "var(--border-light)";
       }}
     >
       {/* Image */}
@@ -39,286 +40,274 @@ export default function ProductCard({ product }) {
           position: "relative",
           aspectRatio: "1",
           overflow: "hidden",
-          backgroundColor: "#f7f7f7",
+          backgroundColor: "var(--bg-muted)",
+          flexShrink: 0,
         }}
       >
-        <img
-          src={product.thumbnail}
-          alt={product.title}
-          loading="lazy"
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            transition: "transform 0.5s",
-          }}
-          onMouseEnter={(e) =>
-            (e.currentTarget.style.transform = "scale(1.06)")
-          }
-          onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
-        />
+        <Link to={`/product/${product.id}`}>
+          <img
+            src={product.thumbnail}
+            alt={product.title}
+            loading="lazy"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              transition: "transform 0.4s",
+              display: "block",
+            }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.transform = "scale(1.06)")
+            }
+            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+          />
+        </Link>
 
-        {/* Badges */}
-        <div
-          style={{
-            position: "absolute",
-            top: "8px",
-            left: "8px",
-            display: "flex",
-            flexDirection: "column",
-            gap: "3px",
-          }}
-        >
-          {product.discountPercentage > 0.5 && (
-            <span className="badge-sale">
-              -{Math.round(product.discountPercentage)}%
-            </span>
-          )}
-          {product.stock < 10 && product.stock > 0 && (
-            <span className="badge-hot">Low Stock</span>
-          )}
-          {product.rating >= 4.8 && (
-            <span className="badge-new">Top Rated</span>
-          )}
-        </div>
+        {/* Discount badge */}
+        {product.discountPercentage > 0.5 && (
+          <span
+            style={{
+              position: "absolute",
+              top: "6px",
+              left: "6px",
+              backgroundColor: "#f97316",
+              color: "#fff",
+              fontSize: "0.62rem",
+              fontWeight: "800",
+              padding: "2px 6px",
+              borderRadius: "3px",
+              letterSpacing: "0.02em",
+            }}
+          >
+            -{Math.round(product.discountPercentage)}%
+          </span>
+        )}
+
+        {/* Low stock */}
+        {product.stock > 0 && product.stock < 10 && (
+          <span
+            style={{
+              position: "absolute",
+              bottom: "6px",
+              left: "6px",
+              backgroundColor: "#ef4444",
+              color: "#fff",
+              fontSize: "0.58rem",
+              fontWeight: "700",
+              padding: "2px 6px",
+              borderRadius: "3px",
+            }}
+          >
+            Only {product.stock} left!
+          </span>
+        )}
 
         {/* Wishlist */}
         <button
           onClick={(e) => {
             e.preventDefault();
+            e.stopPropagation();
             toggle(product);
           }}
           style={{
             position: "absolute",
-            top: "8px",
-            right: "8px",
-            width: "30px",
-            height: "30px",
+            top: "6px",
+            right: "6px",
+            width: "26px",
+            height: "26px",
             borderRadius: "50%",
+            backgroundColor: "var(--bg-card)",
+            border: "1px solid var(--border-light)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            border: `1.5px solid ${wishlisted ? "#f43f5e" : "#e0e0e0"}`,
-            backgroundColor: wishlisted ? "#fff1f2" : "#ffffff",
-            color: wishlisted ? "#f43f5e" : "#a0a0a0",
             cursor: "pointer",
             transition: "all 0.2s",
+            color: wishlisted ? "#ef4444" : "var(--text-subtle)",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = "#ef4444";
+            e.currentTarget.style.color = "#ef4444";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "var(--border-light)";
+            e.currentTarget.style.color = wishlisted
+              ? "#ef4444"
+              : "var(--text-subtle)";
           }}
         >
           <Heart
             style={{
-              width: "13px",
-              height: "13px",
-              fill: wishlisted ? "#f43f5e" : "none",
+              width: "12px",
+              height: "12px",
+              fill: wishlisted ? "#ef4444" : "none",
             }}
           />
         </button>
-
-        {/* Quick add overlay */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            backgroundColor: "rgb(255 255 255 / 0.95)",
-            padding: "10px",
-            display: "flex",
-            gap: "6px",
-            transform: "translateY(100%)",
-            transition: "transform 0.25s",
-          }}
-          className="card-overlay"
-        >
-          <Link
-            to={`/product/${product.id}`}
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "5px",
-              padding: "7px",
-              backgroundColor: "#fff",
-              border: "1.5px solid #e0e0e0",
-              borderRadius: "7px",
-              fontSize: "0.75rem",
-              fontWeight: "600",
-              color: "#3a3a3a",
-              textDecoration: "none",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "#4f7d52";
-              e.currentTarget.style.color = "#4f7d52";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "#e0e0e0";
-              e.currentTarget.style.color = "#3a3a3a";
-            }}
-          >
-            <Eye style={{ width: "13px", height: "13px" }} /> View
-          </Link>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              addItem(product);
-            }}
-            style={{
-              flex: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "5px",
-              padding: "7px",
-              backgroundColor: "#4f7d52",
-              border: "1.5px solid #4f7d52",
-              borderRadius: "7px",
-              fontSize: "0.75rem",
-              fontWeight: "600",
-              color: "#fff",
-              cursor: "pointer",
-              transition: "background-color 0.2s",
-            }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "#3d6440")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "#4f7d52")
-            }
-          >
-            <ShoppingCart style={{ width: "13px", height: "13px" }} /> Add
-          </button>
-        </div>
       </div>
 
       {/* Info */}
-      <div style={{ padding: "12px 14px 14px" }}>
+      <div
+        style={{
+          padding: "8px 10px 10px",
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          gap: "4px",
+        }}
+      >
+        {/* Brand */}
         <p
           style={{
-            fontSize: "0.68rem",
-            color: "#a0a0a0",
+            fontSize: "0.62rem",
+            color: "var(--text-subtle)",
             textTransform: "uppercase",
             letterSpacing: "0.05em",
-            marginBottom: "3px",
-            fontWeight: "500",
+            margin: 0,
+            fontWeight: "600",
           }}
         >
           {product.brand || product.category}
         </p>
+
+        {/* Title */}
         <Link to={`/product/${product.id}`} style={{ textDecoration: "none" }}>
-          <h3
+          <p
             style={{
-              fontSize: "0.85rem",
-              fontWeight: "500",
-              color: "#242424",
-              lineHeight: "1.4",
-              marginBottom: "7px",
+              fontSize: "0.78rem",
+              color: "var(--text-primary)",
+              lineHeight: "1.35",
+              fontWeight: "400",
+              margin: 0,
+              transition: "color 0.2s",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "#4f7d52")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "#242424")}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--brand)")}
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.color = "var(--text-primary)")
+            }
           >
-            {truncate(product.title, 42)}
-          </h3>
+            {truncate(product.title, 40)}
+          </p>
         </Link>
 
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "4px",
-            marginBottom: "9px",
-          }}
-        >
+        {/* Stars */}
+        <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
           {Array.from({ length: 5 }, (_, i) => (
             <Star
               key={i}
               style={{
-                width: "11px",
-                height: "11px",
-                fill: i < Math.floor(product.rating) ? "#fbbf24" : "none",
-                color: i < Math.floor(product.rating) ? "#fbbf24" : "#d4d4d4",
+                width: "10px",
+                height: "10px",
+                fill: i < Math.floor(product.rating) ? "#f97316" : "none",
+                color:
+                  i < Math.floor(product.rating)
+                    ? "#f97316"
+                    : "var(--border-medium)",
               }}
             />
           ))}
-          <span style={{ fontSize: "0.7rem", color: "#a0a0a0" }}>
+          <span
+            style={{
+              fontSize: "0.65rem",
+              color: "var(--text-subtle)",
+              marginLeft: "2px",
+            }}
+          >
             ({product.reviews?.length || 0})
           </span>
         </div>
 
+        {/* Price + add to cart */}
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            gap: "8px",
+            gap: "4px",
+            marginTop: "auto",
+            paddingTop: "4px",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              minWidth: 0,
-            }}
-          >
-            <span
+          <div style={{ minWidth: 0 }}>
+            <p
               style={{
+                fontSize: "0.9rem",
+                fontWeight: "800",
+                color: "var(--brand)",
+                margin: 0,
                 fontFamily: "DM Sans, sans-serif",
-                fontWeight: "700",
-                color: "#141414",
-                fontSize: "0.95rem",
-                whiteSpace: "nowrap",
               }}
             >
-              {formatPrice(finalPrice)}
-            </span>
+              {formatPrice(final)}
+            </p>
             {product.discountPercentage > 0.5 && (
-              <span
+              <p
                 style={{
-                  fontSize: "0.72rem",
-                  color: "#a0a0a0",
+                  fontSize: "0.68rem",
+                  color: "var(--text-subtle)",
                   textDecoration: "line-through",
-                  whiteSpace: "nowrap",
+                  margin: 0,
                 }}
               >
                 {formatPrice(product.price)}
-              </span>
+              </p>
             )}
           </div>
+
           <button
-            onClick={() => addItem(product)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              addItem(product);
+            }}
+            disabled={product.stock === 0}
             style={{
               width: "30px",
               height: "30px",
-              flexShrink: 0,
-              backgroundColor: "#f4f7f4",
-              border: "1.5px solid #a3c4a5",
-              borderRadius: "7px",
+              borderRadius: "50%",
+              backgroundColor:
+                product.stock === 0 ? "var(--bg-muted)" : "var(--brand)",
+              border: "none",
+              cursor: product.stock === 0 ? "not-allowed" : "pointer",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#4f7d52",
-              cursor: "pointer",
-              transition: "all 0.2s",
+              flexShrink: 0,
+              transition: "background-color 0.2s",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#4f7d52";
-              e.currentTarget.style.color = "#fff";
+              if (product.stock > 0)
+                e.currentTarget.style.backgroundColor = "var(--brand-dark)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#f4f7f4";
-              e.currentTarget.style.color = "#4f7d52";
+              if (product.stock > 0)
+                e.currentTarget.style.backgroundColor = "var(--brand)";
             }}
           >
-            <ShoppingCart style={{ width: "13px", height: "13px" }} />
+            <ShoppingCart
+              style={{
+                width: "13px",
+                height: "13px",
+                color: product.stock === 0 ? "var(--text-subtle)" : "#fff",
+              }}
+            />
           </button>
         </div>
-      </div>
 
-      <style>{`
-        div:hover > div > .card-overlay { transform: translateY(0) !important; }
-      `}</style>
+        {/* Out of stock label */}
+        {product.stock === 0 && (
+          <p
+            style={{
+              fontSize: "0.65rem",
+              color: "#ef4444",
+              fontWeight: "600",
+              margin: 0,
+            }}
+          >
+            Out of Stock
+          </p>
+        )}
+      </div>
     </div>
   );
 }
