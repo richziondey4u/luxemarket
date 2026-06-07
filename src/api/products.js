@@ -1,9 +1,3 @@
-/**
- * All API calls live here.
- * When your backend is ready, just replace the fetch URLs.
- * Each function has a comment showing the REST endpoint it maps to.
- */
-
 const BASE = "https://dummyjson.com";
 
 async function get(url) {
@@ -12,14 +6,13 @@ async function get(url) {
   return res.json();
 }
 
-// ─── Category map ────────────────────────────────────────────────────────────
+/* ── Categories ── */
 export const CATEGORIES = [
   {
     slug: "smartphones",
     label: "Smartphones",
     icon: "📱",
-    color: "from-blue-600 to-indigo-700",
-    apiCategory: "smartphones",
+    apiCategory: ["smartphones"],
     image:
       "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&q=80",
   },
@@ -27,17 +20,23 @@ export const CATEGORIES = [
     slug: "laptops",
     label: "Laptops",
     icon: "💻",
-    color: "from-slate-600 to-slate-800",
-    apiCategory: "laptops",
+    apiCategory: ["laptops"],
     image:
       "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=600&q=80",
+  },
+  {
+    slug: "tablets",
+    label: "Tablets",
+    icon: "📲",
+    apiCategory: ["tablets"],
+    image:
+      "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=600&q=80",
   },
   {
     slug: "fragrances",
     label: "Fragrances",
     icon: "🌸",
-    color: "from-pink-500 to-rose-600",
-    apiCategory: "fragrances",
+    apiCategory: ["fragrances"],
     image:
       "https://images.unsplash.com/photo-1588167056547-c783ed534ee4?w=600&q=80",
   },
@@ -45,8 +44,7 @@ export const CATEGORIES = [
     slug: "skincare",
     label: "Skincare",
     icon: "✨",
-    color: "from-emerald-500 to-teal-600",
-    apiCategory: "skincare",
+    apiCategory: ["skin-care"],
     image:
       "https://images.unsplash.com/photo-1556228578-0d85b1a4d571?w=600&q=80",
   },
@@ -54,8 +52,7 @@ export const CATEGORIES = [
     slug: "groceries",
     label: "Groceries",
     icon: "🛒",
-    color: "from-green-500 to-lime-600",
-    apiCategory: "groceries",
+    apiCategory: ["groceries"],
     image:
       "https://images.unsplash.com/photo-1542838132-92c53300491e?w=600&q=80",
   },
@@ -63,8 +60,7 @@ export const CATEGORIES = [
     slug: "home-decoration",
     label: "Home & Decor",
     icon: "🏠",
-    color: "from-amber-500 to-orange-600",
-    apiCategory: "home-decoration",
+    apiCategory: ["home-decoration"],
     image:
       "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80",
   },
@@ -72,26 +68,71 @@ export const CATEGORIES = [
     slug: "furniture",
     label: "Furniture",
     icon: "🪑",
-    color: "from-stone-500 to-stone-700",
-    apiCategory: "furniture",
+    apiCategory: ["furniture"],
     image:
       "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=600&q=80",
   },
   {
-    slug: "tops",
+    slug: "fashion",
     label: "Fashion",
     icon: "👕",
-    color: "from-violet-500 to-purple-700",
-    apiCategory: "tops",
+    // Merges ALL clothing categories
+    apiCategory: [
+      "tops",
+      "womens-dresses",
+      "mens-shirts",
+      "womens-tops",
+      "mens-jackets",
+      "womens-jackets",
+    ],
     image:
       "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=80",
   },
   {
-    slug: "sports-accessories",
+    slug: "shoes",
+    label: "Shoes",
+    icon: "👟",
+    apiCategory: ["mens-shoes", "womens-shoes"],
+    image:
+      "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&q=80",
+  },
+  {
+    slug: "watches",
+    label: "Watches",
+    icon: "⌚",
+    apiCategory: ["mens-watches", "womens-watches"],
+    image:
+      "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80",
+  },
+  {
+    slug: "bags",
+    label: "Bags",
+    icon: "👜",
+    apiCategory: ["womens-bags"],
+    image:
+      "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?w=600&q=80",
+  },
+  {
+    slug: "jewellery",
+    label: "Jewellery",
+    icon: "💍",
+    apiCategory: ["womens-jewellery"],
+    image:
+      "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=600&q=80",
+  },
+  {
+    slug: "sunglasses",
+    label: "Sunglasses",
+    icon: "🕶️",
+    apiCategory: ["sunglasses"],
+    image:
+      "https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=600&q=80",
+  },
+  {
+    slug: "sports",
     label: "Sports",
     icon: "⚽",
-    color: "from-red-500 to-rose-700",
-    apiCategory: "sports-accessories",
+    apiCategory: ["sports-accessories"],
     image:
       "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=600&q=80",
   },
@@ -99,63 +140,98 @@ export const CATEGORIES = [
     slug: "vehicle",
     label: "Automotive",
     icon: "🚗",
-    color: "from-gray-600 to-gray-800",
-    apiCategory: "vehicle",
+    apiCategory: ["vehicle", "motorcycle"],
     image:
       "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&q=80",
+  },
+  {
+    slug: "lighting",
+    label: "Lighting",
+    icon: "💡",
+    apiCategory: ["lighting"],
+    image:
+      "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=600&q=80",
   },
 ];
 
 export const getCategoryBySlug = (slug) =>
-  CATEGORIES.find(c => c.slug === slug || c.apiCategory === slug)
+  CATEGORIES.find(
+    (c) =>
+      c.slug === slug ||
+      (Array.isArray(c.apiCategory)
+        ? c.apiCategory.includes(slug)
+        : c.apiCategory === slug),
+  );
 
-// ─── API functions ───────────────────────────────────────────────────────────
-// Replace BASE and paths with your own backend when ready
+/* ── Fetch all sub-categories and merge ── */
+async function fetchMerged(apiCategories, limit = 100) {
+  // Fetch all in parallel
+  const results = await Promise.allSettled(
+    apiCategories.map((cat) =>
+      get(`${BASE}/products/category/${cat}?limit=100`)
+        .then((d) => d.products || [])
+        .catch(() => []),
+    ),
+  );
+  const all = results
+    .filter((r) => r.status === "fulfilled")
+    .flatMap((r) => r.value);
+
+  // Deduplicate by id
+  const seen = new Set();
+  const unique = all.filter((p) => {
+    if (seen.has(p.id)) return false;
+    seen.add(p.id);
+    return true;
+  });
+
+  return {
+    products: unique.slice(0, limit),
+    total: unique.length,
+  };
+}
 
 export const api = {
-  // GET /api/products?limit=n
-  getFeaturedProducts: (limit = 12) =>
+  getFeaturedProducts: (limit = 20) =>
     get(`${BASE}/products?limit=${limit}&skip=0`).then((d) => d.products),
 
-  // GET /api/products?category=slug&limit=n&skip=n
-  getProductsByCategory: async (slug, limit = 100, skip = 0) => {
-    const cat = CATEGORIES.find((c) => c.slug === slug)?.apiCategory || slug;
-    // DummyJSON max limit is 194
-    const data = await get(
-      `${BASE}/products/category/${cat}?limit=${limit}&skip=${skip}`,
-    );
-    return data;
+  getProductsByCategory: async (slug, limit = 100) => {
+    const cat = getCategoryBySlug(slug);
+    if (!cat) return { products: [], total: 0 };
+    const cats = Array.isArray(cat.apiCategory)
+      ? cat.apiCategory
+      : [cat.apiCategory];
+    return fetchMerged(cats, limit);
   },
 
-  // GET /api/products/:id
   getProduct: (id) => get(`${BASE}/products/${id}`),
 
-  // GET /api/products/search?q=query
-  searchProducts: (q, limit = 20) =>
+  searchProducts: (q, limit = 30) =>
     get(
       `${BASE}/products/search?q=${encodeURIComponent(q)}&limit=${limit}`,
     ).then((d) => d.products),
 
-  // GET /api/products?sort=createdAt&order=desc&limit=8
   getNewArrivals: () =>
-    get(`${BASE}/products?limit=8&skip=20`).then((d) => d.products),
+    get(`${BASE}/products?limit=20&skip=20`).then((d) => d.products),
 
-  // GET /api/products?sort=sales&order=desc&limit=8
   getBestSellers: () =>
-    get(`${BASE}/products?limit=8&skip=5`).then((d) => d.products),
+    get(`${BASE}/products?limit=20&skip=5`).then((d) => d.products),
 
-  // GET /api/products?category=slug&exclude=id&limit=4
   getRelatedProducts: async (slug, excludeId) => {
-    const cat =
-      CATEGORIES.find((c) => c.slug === slug || c.apiCategory === slug)
-        ?.apiCategory || slug;
-    const data = await get(`${BASE}/products/category/${cat}?limit=20`);
+    const cat = getCategoryBySlug(slug);
+    if (!cat) return [];
+    const cats = Array.isArray(cat.apiCategory)
+      ? cat.apiCategory
+      : [cat.apiCategory];
+    const data = await fetchMerged(cats, 20);
     return data.products.filter((p) => p.id !== Number(excludeId)).slice(0, 6);
   },
+
+  getAllProducts: (limit = 100, skip = 0) =>
+    get(`${BASE}/products?limit=${limit}&skip=${skip}`),
 };
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-// 1 USD ≈ 1,600 NGN — swap this rate with a live rate from your backend later
+/* ── Helpers ── */
 const USD_TO_NGN = 1600;
 
 export const formatPrice = (n) =>
@@ -164,6 +240,7 @@ export const formatPrice = (n) =>
     currency: "NGN",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(Math.round(n * USD_TO_NGN));
+  }).format(Math.round((n || 0) * USD_TO_NGN));
 
-export const discountedPrice = (price, pct) => price * (1 - pct / 100);
+export const discountedPrice = (price, pct) =>
+  (price || 0) * (1 - (pct || 0) / 100);

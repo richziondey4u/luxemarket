@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 
 import Layout            from '../components/layout/layout.jsx'
 import ProtectedRoute    from '../components/auth/ProtectedRoute.jsx'
+import AdminApp          from '../admin/AdminApp.jsx'
 
 import HomePage          from '../pages/HomePage.jsx'
 import CategoryPage      from '../pages/CategoryPage.jsx'
@@ -24,9 +25,14 @@ import FAQPage           from '../pages/FAQPage.jsx'
 import PrivacyPage       from '../pages/PrivacyPage.jsx'
 import TermsPage         from '../pages/TermsPage.jsx'
 
+
 export default function AppRouter() {
   return (
     <Routes>
+
+       <Route path="/admin/*" element={<AdminApp />} />
+
+
       <Route element={<Layout />}>
         {/* Public */}
         <Route path="/"                element={<HomePage />} />
@@ -52,6 +58,7 @@ export default function AppRouter() {
           <Route path="/payment"  element={<PaymentPage />} />
           <Route path="/account"  element={<AccountPage />} />
         </Route>
+
 
         <Route path="/404" element={<NotFoundPage />} />
         <Route path="*"    element={<Navigate to="/404" replace />} />
