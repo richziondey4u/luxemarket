@@ -1,0 +1,519 @@
+{
+  "version": "1",
+  "name": "LuxeMarket API",
+  "items": [
+    {
+      "type": "folder",
+      "name": "Health",
+      "items": [
+        {
+          "type": "http",
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/health",
+            "headers": [],
+            "body": { "mode": "none" }
+          }
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "name": "Auth",
+      "items": [
+        {
+          "type": "http",
+          "name": "Register Customer",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/auth/register",
+            "headers": [{ "name": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"+2348000000000\"\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Login Customer",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/auth/login",
+            "headers": [{ "name": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Admin Register",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/auth/admin/register",
+            "headers": [{ "name": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"name\": \"Admin User\",\n  \"email\": \"admin@luxemarket.com\",\n  \"password\": \"Admin@2025\",\n  \"inviteCode\": \"LUXE-ADMIN-2025\",\n  \"role\": \"ADMIN\"\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Admin Login",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/auth/admin/login",
+            "headers": [{ "name": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"email\": \"admin@luxemarket.com\",\n  \"password\": \"Admin@2025\"\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/auth/me",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/auth/refresh",
+            "headers": [],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/auth/logout",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "none" }
+          }
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "name": "Products",
+      "items": [
+        {
+          "type": "http",
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/products?page=1&limit=20",
+            "headers": [],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get Products - Search",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/products?search=phone&limit=10",
+            "headers": [],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get Products - By Category",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/products?category=smartphones&limit=20",
+            "headers": [],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get Single Product",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/products/{{productId}}",
+            "headers": [],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get Categories",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/products/categories",
+            "headers": [],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Add Review",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/products/{{productId}}/reviews",
+            "headers": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"rating\": 5,\n  \"comment\": \"Excellent product, highly recommend!\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "name": "User",
+      "items": [
+        {
+          "type": "http",
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "url": "http://localhost:5000/api/users/profile",
+            "headers": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"name\": \"Updated Name\",\n  \"phone\": \"+2348012345678\"\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Update Address",
+          "request": {
+            "method": "PUT",
+            "url": "http://localhost:5000/api/users/address",
+            "headers": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"street\": \"123 Main Street\",\n  \"city\": \"Lagos\",\n  \"state\": \"Lagos\",\n  \"country\": \"Nigeria\"\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/users/cart",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Add to Cart",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/users/cart",
+            "headers": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Update Cart Item",
+          "request": {
+            "method": "PUT",
+            "url": "http://localhost:5000/api/users/cart/{{productId}}",
+            "headers": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"quantity\": 3\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Remove from Cart",
+          "request": {
+            "method": "DELETE",
+            "url": "http://localhost:5000/api/users/cart/{{productId}}",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "url": "http://localhost:5000/api/users/cart",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get Wishlist",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/users/wishlist",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Toggle Wishlist",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/users/wishlist/{{productId}}",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "none" }
+          }
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "name": "Orders",
+      "items": [
+        {
+          "type": "http",
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/orders",
+            "headers": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"items\": [\n    { \"productId\": \"{{productId}}\", \"quantity\": 2 }\n  ],\n  \"shippingAddress\": {\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"email\": \"john@example.com\",\n    \"phone\": \"+2348000000000\",\n    \"street\": \"123 Main St\",\n    \"city\": \"Lagos\",\n    \"state\": \"Lagos\",\n    \"country\": \"Nigeria\"\n  }\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get My Orders",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/orders?page=1&limit=10",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get Single Order",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/orders/{{orderId}}",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Cancel Order",
+          "request": {
+            "method": "PUT",
+            "url": "http://localhost:5000/api/orders/{{orderId}}/cancel",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "none" }
+          }
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "name": "Payment",
+      "items": [
+        {
+          "type": "http",
+          "name": "Initialize Payment",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/payment/initialize",
+            "headers": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"orderId\": \"{{orderId}}\"\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Verify Payment",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/payment/verify/{{reference}}",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "body": { "mode": "none" }
+          }
+        }
+      ]
+    },
+    {
+      "type": "folder",
+      "name": "Admin",
+      "items": [
+        {
+          "type": "http",
+          "name": "Get Dashboard",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/admin/dashboard",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get Analytics",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/admin/analytics",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/admin/orders?page=1&limit=20",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Update Order Status",
+          "request": {
+            "method": "PUT",
+            "url": "http://localhost:5000/api/admin/orders/{{orderId}}/status",
+            "headers": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"status\": \"SHIPPED\"\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:5000/api/admin/users?page=1&limit=20",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/admin/products",
+            "headers": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"title\": \"Test Product\",\n  \"description\": \"A great product for testing\",\n  \"price\": 49.99,\n  \"discountPercentage\": 10,\n  \"stock\": 50,\n  \"brand\": \"LuxeBrand\",\n  \"thumbnail\": \"https://placehold.co/400x400/4f7d52/white?text=Product\",\n  \"images\": [],\n  \"tags\": [\"test\", \"demo\"],\n  \"isFeatured\": true\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "url": "http://localhost:5000/api/admin/products/{{productId}}",
+            "headers": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"price\": 39.99,\n  \"stock\": 100\n}"
+            }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "url": "http://localhost:5000/api/admin/products/{{productId}}",
+            "headers": [{ "name": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "body": { "mode": "none" }
+          }
+        },
+        {
+          "type": "http",
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "url": "http://localhost:5000/api/admin/categories",
+            "headers": [
+              { "name": "Content-Type", "value": "application/json" },
+              { "name": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "json",
+              "json": "{\n  \"name\": \"Electronics\",\n  \"slug\": \"electronics\",\n  \"icon\": \"📱\",\n  \"description\": \"All electronics\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "environments": [
+    {
+      "name": "Local",
+      "variables": [
+        { "name": "baseUrl",    "value": "http://localhost:5000" },
+        { "name": "accessToken","value": "paste_token_here_after_login" },
+        { "name": "adminToken", "value": "paste_admin_token_here" },
+        { "name": "productId",  "value": "paste_product_id_here" },
+        { "name": "orderId",    "value": "paste_order_id_here" },
+        { "name": "reference",  "value": "paste_payment_ref_here" }
+      ]
+    }
+  ]
+}
