@@ -1,6 +1,5 @@
 import { prisma } from "../lib/prisma.js";
 
-/* ── Get all products — DB first, then note DummyJSON is external ── */
 export const getProducts = async (req, res, next) => {
   try {
     const {
@@ -16,37 +15,39 @@ export const getProducts = async (req, res, next) => {
     } = req.query;
 
     const skip = (Number(page) - 1) * Number(limit);
+    const where = { isActive: true };
 
-    const where = {
-      isActive: true,
-      ...(category && { category: { slug: category } }),
-      ...(featured && { isFeatured: featured === "true" }),
-      ...((minPrice || maxPrice) && {
-        price: {
-          ...(minPrice && { gte: Number(minPrice) }),
-          ...(maxPrice && { lte: Number(maxPrice) }),
-        },
-      }),
-      ...(search && {
-        OR: [
-          { title: { contains: search, mode: "insensitive" } },
-          { description: { contains: search, mode: "insensitive" } },
-          { brand: { contains: search, mode: "insensitive" } },
-        ],
-      }),
-    };
+    if (category) {
+      where.category = { slug: category };
+    }
+    if (featured === "true") where.isFeatured = true;
+    if (minPrice || maxPrice) {
+      where.price = {};
+      if (minPrice) where.price.gte = Number(minPrice);
+      if (maxPrice) where.price.lte = Number(maxPrice);
+    }
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+        { brand: { contains: search, mode: "insensitive" } },
+      ];
+    }
 
-    const validSorts = ["createdAt", "price", "rating", "title"];
+    const validSorts = ["createdAt", "price", "rating", "title", "stock"];
     const sortField = validSorts.includes(sort) ? sort : "createdAt";
-    const sortOrder = order === "asc" ? "asc" : "desc";
 
     const [products, total] = await Promise.all([
       prisma.product.findMany({
         where,
         skip,
         take: Number(limit),
-        include: { category: { select: { name: true, slug: true } } },
-        orderBy: { [sortField]: sortOrder },
+        include: {
+          category: {
+            select: { id: true, name: true, slug: true, icon: true },
+          },
+        },
+        orderBy: { [sortField]: order === "asc" ? "asc" : "desc" },
       }),
       prisma.product.count({ where }),
     ]);
@@ -68,7 +69,6 @@ export const getProducts = async (req, res, next) => {
   }
 };
 
-/* ── Get single product by DB id ── */
 export const getProduct = async (req, res, next) => {
   try {
     const product = await prisma.product.findFirst({
@@ -78,40 +78,19 @@ export const getProduct = async (req, res, next) => {
         reviews: {
           include: { user: { select: { name: true, avatar: true } } },
           orderBy: { createdAt: "desc" },
-          take: 20,
         },
       },
     });
-
-    if (!product) {
+    if (!product)
       return res
         .status(404)
         .json({ success: false, message: "Product not found." });
-    }
-
     res.json({ success: true, data: { product } });
   } catch (err) {
     next(err);
   }
 };
 
-/* ── Get categories from DB ── */
-export const getCategories = async (req, res, next) => {
-  try {
-    const categories = await prisma.category.findMany({
-      where: { isActive: true },
-      include: {
-        _count: { select: { products: { where: { isActive: true } } } },
-      },
-      orderBy: { name: "asc" },
-    });
-    res.json({ success: true, data: { categories } });
-  } catch (err) {
-    next(err);
-  }
-};
-
-/* ── Add review ── */
 export const addReview = async (req, res, next) => {
   try {
     const { rating, comment } = req.body;
@@ -120,7 +99,7 @@ export const addReview = async (req, res, next) => {
     if (!rating || rating < 1 || rating > 5) {
       return res
         .status(400)
-        .json({ success: false, message: "Rating must be between 1 and 5." });
+        .json({ success: false, message: "Rating must be 1-5." });
     }
 
     const product = await prisma.product.findUnique({
@@ -143,7 +122,6 @@ export const addReview = async (req, res, next) => {
       },
     });
 
-    // Recalculate product rating
     const stats = await prisma.review.aggregate({
       where: { productId },
       _avg: { rating: true },

@@ -1,37 +1,53 @@
-import { useState, useMemo } from "react";
-import { Search, Users } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Search, Users, RefreshCw } from "lucide-react";
 import { formatPrice } from "../../api/products.js";
 import { formatDate } from "../../lib/utils.js";
 
-const getUsers = () => {
-  try {
-    return JSON.parse(localStorage.getItem("lm_users") || "[]");
-  } catch {
-    return [];
-  }
-};
-const getOrders = () => {
-  try {
-    return JSON.parse(localStorage.getItem("lm_orders") || "[]");
-  } catch {
-    return [];
-  }
-};
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+async function apiFetch(path) {
+  const res = await fetch(`${API}${path}`, { credentials: "include" });
+  const d = await res.json();
+  if (!res.ok) throw new Error(d.message || "Failed");
+  return d;
+}
 
 export default function CustomersPage() {
-  const users = getUsers();
-  const orders = getOrders();
+  const [users, setUsers] = useState([]);
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      // Fetch ALL users from DB — no role filter so you see all 3
+      const [uRes, oRes] = await Promise.allSettled([
+        apiFetch("/admin/users?limit=100"),
+        apiFetch("/admin/orders?limit=500"),
+      ]);
+      if (uRes.status === "fulfilled") setUsers(uRes.value.data?.users || []);
+      if (oRes.status === "fulfilled") setOrders(oRes.value.data?.orders || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    load();
+  }, []);
 
   const enriched = useMemo(
     () =>
-      users.map((u) => {
-        const userOrders = orders.filter((o) => o.userId === u.id);
-        const spent = userOrders
-          .filter((o) => o.status !== "cancelled")
-          .reduce((s, o) => s + (o.total || 0), 0);
-        return { ...u, orderCount: userOrders.length, spent };
-      }),
+      users.map((u) => ({
+        ...u,
+        orderCount: orders.filter((o) => o.userId === u.id).length,
+        spent: orders
+          .filter((o) => o.userId === u.id && o.status !== "CANCELLED")
+          .reduce((s, o) => s + (o.total || 0), 0),
+      })),
     [users, orders],
   );
 
@@ -41,8 +57,7 @@ export default function CustomersPage() {
       return (
         !q ||
         u.name?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        u.phone?.includes(q)
+        u.email?.toLowerCase().includes(q)
       );
     })
     .sort((a, b) => b.spent - a.spent);
@@ -71,11 +86,30 @@ export default function CustomersPage() {
             Customers
           </h1>
           <p style={{ fontSize: "0.75rem", color: "#6b7280", margin: 0 }}>
-            {filtered.length} registered accounts
+            {filtered.length} account{filtered.length !== 1 ? "s" : ""} found
           </p>
         </div>
+        <button
+          onClick={load}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            padding: "7px 14px",
+            backgroundColor: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: "7px",
+            color: "#374151",
+            fontSize: "0.78rem",
+            fontWeight: "600",
+            cursor: "pointer",
+          }}
+        >
+          <RefreshCw style={{ width: "13px", height: "13px" }} /> Refresh
+        </button>
       </div>
 
+      {/* Search */}
       <div style={{ position: "relative" }}>
         <Search
           style={{
@@ -91,7 +125,7 @@ export default function CustomersPage() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search by name, email, or phone..."
+          placeholder="Search by name or email..."
           style={{
             width: "100%",
             backgroundColor: "#fff",
@@ -108,6 +142,7 @@ export default function CustomersPage() {
         />
       </div>
 
+      {/* Table */}
       <div
         style={{
           backgroundColor: "#fff",
@@ -117,7 +152,24 @@ export default function CustomersPage() {
           boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
         }}
       >
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div
+            style={{ padding: "48px", textAlign: "center", color: "#9ca3af" }}
+          >
+            <div
+              style={{
+                width: "28px",
+                height: "28px",
+                border: "3px solid #e5e7eb",
+                borderTopColor: "#4f7d52",
+                borderRadius: "50%",
+                animation: "spin 0.8s linear infinite",
+                margin: "0 auto 10px",
+              }}
+            />
+            Loading customers...
+          </div>
+        ) : filtered.length === 0 ? (
           <div style={{ padding: "48px", textAlign: "center" }}>
             <Users
               style={{
@@ -134,10 +186,14 @@ export default function CustomersPage() {
                 marginBottom: "4px",
               }}
             >
-              {users.length === 0 ? "No customers yet" : "No results found"}
+              {users.length === 0
+                ? "No registered customers yet"
+                : "No results found"}
             </p>
             <p style={{ color: "#9ca3af", fontSize: "0.82rem" }}>
-              Customers will appear here after they register.
+              {users.length === 0
+                ? "Customers appear here after they register on the store."
+                : "Try a different search term."}
             </p>
           </div>
         ) : (
@@ -154,7 +210,7 @@ export default function CustomersPage() {
                   {[
                     "Customer",
                     "Email",
-                    "Phone",
+                    "Role",
                     "Orders",
                     "Total Spent",
                     "Joined",
@@ -199,7 +255,10 @@ export default function CustomersPage() {
                         }}
                       >
                         <img
-                          src={user.avatar}
+                          src={
+                            user.avatar ||
+                            `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name || "U")}&backgroundColor=4f7d52&textColor=ffffff`
+                          }
                           alt={user.name}
                           style={{
                             width: "32px",
@@ -208,9 +267,9 @@ export default function CustomersPage() {
                             border: "1.5px solid #e5e7eb",
                             flexShrink: 0,
                           }}
-                          onError={(e) =>
-                            (e.currentTarget.style.display = "none")
-                          }
+                          onError={(e) => {
+                            e.currentTarget.src = `https://placehold.co/32x32/4f7d52/white?text=${(user.name || "U").charAt(0)}`;
+                          }}
                         />
                         <div>
                           <p
@@ -223,7 +282,7 @@ export default function CustomersPage() {
                           >
                             {user.name}
                           </p>
-                          {i === 0 && filtered.length > 1 && (
+                          {i === 0 && filtered.length > 1 && user.spent > 0 && (
                             <span
                               style={{
                                 fontSize: "0.6rem",
@@ -249,14 +308,21 @@ export default function CustomersPage() {
                     >
                       {user.email}
                     </td>
-                    <td
-                      style={{
-                        padding: "10px 14px",
-                        fontSize: "0.75rem",
-                        color: "#6b7280",
-                      }}
-                    >
-                      {user.phone || "—"}
+                    <td style={{ padding: "10px 14px" }}>
+                      <span
+                        style={{
+                          fontSize: "0.68rem",
+                          fontWeight: "700",
+                          padding: "2px 8px",
+                          borderRadius: "99px",
+                          backgroundColor:
+                            user.role === "USER" ? "#f0fdf4" : "#fef3f2",
+                          color: user.role === "USER" ? "#4f7d52" : "#dc2626",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {user.role?.toLowerCase() || "user"}
+                      </span>
                     </td>
                     <td
                       style={{
@@ -287,7 +353,7 @@ export default function CustomersPage() {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {formatDate(user.createdAt)}
+                      {user.createdAt ? formatDate(user.createdAt) : "—"}
                     </td>
                   </tr>
                 ))}
@@ -296,6 +362,7 @@ export default function CustomersPage() {
           </div>
         )}
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

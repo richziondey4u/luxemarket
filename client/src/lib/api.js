@@ -77,9 +77,26 @@ class APIClient {
   getOrder = (id) => this.request(`/orders/${id}`);
   cancelOrder = (id) => this.request(`/orders/${id}/cancel`, { method: "PUT" });
 
+  // apiClient
+  trackOrder = (orderNumber) => this.request(`/orders/track/${orderNumber}`);
+
   // Payment
   initializePayment = (orderId) =>
-    this.request("/payment/initialize", { method: "POST", body: { orderId } });
+    this.request("/payment/initialize", {
+      method: "POST",
+      body: { orderId },
+    });
+
+  // Chat
+  sendChatMessage = (message, history) =>
+    this.request("/chat", { method: "POST", body: { message, history } });
+
+  demoPayment = (orderId) =>
+    this.request("/payment/demo", {
+      method: "POST",
+      body: { orderId },
+    });
+
   verifyPayment = (reference) => this.request(`/payment/verify/${reference}`);
 
   // Admin
@@ -91,6 +108,10 @@ class APIClient {
     this.request(`/admin/orders/${id}/status`, {
       method: "PUT",
       body: { status },
+    });
+  deleteOrder = (id) =>
+    this.request(`/admin/orders/${id}`, {
+      method: "DELETE",
     });
   getAdminUsers = (params = {}) =>
     this.request("/admin/users?" + new URLSearchParams(params));

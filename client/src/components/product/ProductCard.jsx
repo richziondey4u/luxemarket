@@ -167,7 +167,7 @@ export default function ProductCard({ product }) {
             fontWeight: "600",
           }}
         >
-          {product.brand || product.category}
+          {product.brand || product.category?.name}
         </p>
 
         {/* Title */}
@@ -213,7 +213,7 @@ export default function ProductCard({ product }) {
               marginLeft: "2px",
             }}
           >
-            ({product.reviews?.length || 0})
+            ({product.reviewCount || 0})
           </span>
         </div>
 

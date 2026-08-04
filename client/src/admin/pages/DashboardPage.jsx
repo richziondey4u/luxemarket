@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   DollarSign,
@@ -12,38 +11,50 @@ import {
 } from "lucide-react";
 import StatCard from "../components/StatCard.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
-import { formatPrice, CATEGORIES } from "../../api/products.js";
+import { useCategories } from "../../hooks/useProducts.js";
 import { formatDate } from "../../lib/utils.js";
-
-const getOrders = () => {
-  try {
-    return JSON.parse(localStorage.getItem("lm_orders") || "[]");
-  } catch {
-    return [];
-  }
-};
-const getUsers = () => {
-  try {
-    return JSON.parse(localStorage.getItem("lm_users") || "[]");
-  } catch {
-    return [];
-  }
-};
+import { formatPrice } from "../../api/products";
+import { useState, useEffect, useMemo } from "react";
+import { apiClient } from "../../lib/api.js";
 
 export default function DashboardPage() {
-  const orders = getOrders();
-  const users = getUsers();
+  const [orders, setOrders] = useState([]);
+  const [users, setUsers] = useState([]);
+  const { data: categories = [] } = useCategories();
+
+  useEffect(() => {
+    async function loadDashboard() {
+      try {
+        const [ordersRes, usersRes] = await Promise.all([
+          apiClient.getAdminOrders(),
+          apiClient.getAdminUsers(),
+        ]);
+
+        setOrders(ordersRes.data.orders || []);
+        setUsers(usersRes.data.users || []);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    loadDashboard();
+  }, []);
 
   const stats = useMemo(
     () => ({
       revenue: orders
-        .filter((o) => o.status !== "cancelled")
+        .filter((o) => o.status !== "CANCELLED")
         .reduce((s, o) => s + (o.total || 0), 0),
+
       total: orders.length,
-      paid: orders.filter((o) => ["paid", "delivered"].includes(o.status))
+
+      paid: orders.filter((o) => ["PAID", "DELIVERED"].includes(o.status))
         .length,
-      pending: orders.filter((o) => o.status === "pending").length,
-      cancelled: orders.filter((o) => o.status === "cancelled").length,
+
+      pending: orders.filter((o) => o.status === "PENDING").length,
+
+      cancelled: orders.filter((o) => o.status === "CANCELLED").length,
+
       customers: users.length,
     }),
     [orders, users],
@@ -308,7 +319,7 @@ export default function DashboardPage() {
               gap: "6px",
             }}
           >
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <Link
                 key={cat.slug}
                 to={`/category/${cat.slug}`}

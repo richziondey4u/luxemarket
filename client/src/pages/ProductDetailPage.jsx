@@ -10,35 +10,35 @@ import {
   RotateCcw,
   Minus,
   Plus,
-  Share2,
-  Tag,
-  Package,
   CheckCircle,
   AlertCircle,
   ArrowLeft,
   Zap,
+  Tag,
+  Package,
 } from "lucide-react";
-import { useProduct, useRelatedProducts } from "../hooks/useProducts.js";
+import { useProduct, useRelatedProducts , useCategories } from "../hooks/useProducts.js";
 import { useCart } from "../context/CartContext.jsx";
+import { discountedPrice, formatPrice } from "../api/products";
 import { useWishlist } from "../context/WishlistContext.jsx";
-import {
-  formatPrice,
-  discountedPrice,
-  getCategoryBySlug,
-} from "../api/products.js";
 import ProductCard from "../components/product/ProductCard.jsx";
-import ProductSkeleton from "../components/product/ProductSkeleton.jsx";
 
-/* ── Star rating row ── */
-function Stars({ rating = 0, count = 0, size = 14 }) {
+/* ── Helpers ── */
+const isUUID = (id) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    String(id),
+  );
+
+/* ── Stars ── */
+function Stars({ rating = 0, count = 0 }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
       {Array.from({ length: 5 }, (_, i) => (
         <Star
           key={i}
           style={{
-            width: size,
-            height: size,
+            width: 14,
+            height: 14,
             fill: i < Math.round(rating) ? "#f97316" : "none",
             color: i < Math.round(rating) ? "#f97316" : "var(--border-medium)",
           }}
@@ -51,7 +51,8 @@ function Stars({ rating = 0, count = 0, size = 14 }) {
           marginLeft: "4px",
         }}
       >
-        {Number(rating).toFixed(1)} ({count} review{count !== 1 ? "s" : ""})
+        {Number(rating || 0).toFixed(1)} ({count} review{count !== 1 ? "s" : ""}
+        )
       </span>
     </div>
   );
@@ -59,29 +60,26 @@ function Stars({ rating = 0, count = 0, size = 14 }) {
 
 /* ── Image gallery ── */
 function Gallery({ images = [], thumbnail, title }) {
-  // Build a clean image list — use thumbnail as fallback
-  const allImages = (() => {
-    const list = [];
-    if (thumbnail) list.push(thumbnail);
+  const list = (() => {
+    const arr = [];
+    if (thumbnail) arr.push(thumbnail);
     if (Array.isArray(images)) {
       images.forEach((img) => {
-        if (img && img !== thumbnail) list.push(img);
+        if (img && img !== thumbnail) arr.push(img);
       });
     }
-    return list.length > 0
-      ? list
+    return arr.length > 0
+      ? arr
       : [
-          `https://placehold.co/600x600/4f7d52/white?text=${encodeURIComponent((title || "P").slice(0, 10))}`,
+          `https://placehold.co/600x600/4f7d52/white?text=${encodeURIComponent((title || "P").slice(0, 8))}`,
         ];
   })();
 
   const [active, setActive] = useState(0);
-
-  const safeActive = Math.min(active, allImages.length - 1);
+  const idx = Math.min(active, list.length - 1);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-      {/* Main image */}
       <div
         style={{
           aspectRatio: "1",
@@ -89,30 +87,20 @@ function Gallery({ images = [], thumbnail, title }) {
           borderRadius: "12px",
           overflow: "hidden",
           border: "1px solid var(--border-light)",
-          position: "relative",
         }}
       >
         <img
-          src={allImages[safeActive]}
+          src={list[idx]}
           alt={title}
           style={{ width: "100%", height: "100%", objectFit: "cover" }}
           onError={(e) => {
-            e.currentTarget.src = `https://placehold.co/600x600/4f7d52/white?text=${encodeURIComponent((title || "P").slice(0, 10))}`;
+            e.currentTarget.src = `https://placehold.co/600x600/4f7d52/white?text=IMG`;
           }}
         />
       </div>
-
-      {/* Thumbnails — only show if more than 1 image */}
-      {allImages.length > 1 && (
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            overflowX: "auto",
-            paddingBottom: "4px",
-          }}
-        >
-          {allImages.map((img, i) => (
+      {list.length > 1 && (
+        <div style={{ display: "flex", gap: "8px", overflowX: "auto" }}>
+          {list.map((img, i) => (
             <button
               key={i}
               onClick={() => setActive(i)}
@@ -122,16 +110,15 @@ function Gallery({ images = [], thumbnail, title }) {
                 flexShrink: 0,
                 borderRadius: "8px",
                 overflow: "hidden",
-                border: `2px solid ${i === safeActive ? "var(--brand)" : "var(--border-light)"}`,
+                border: `2px solid ${i === idx ? "var(--brand)" : "var(--border-light)"}`,
                 padding: 0,
                 cursor: "pointer",
-                transition: "border-color 0.2s",
                 backgroundColor: "var(--bg-muted)",
               }}
             >
               <img
                 src={img}
-                alt={`View ${i + 1}`}
+                alt=""
                 style={{ width: "100%", height: "100%", objectFit: "cover" }}
                 onError={(e) => {
                   e.currentTarget.src = `https://placehold.co/64x64/4f7d52/white?text=IMG`;
@@ -147,17 +134,18 @@ function Gallery({ images = [], thumbnail, title }) {
 
 /* ── Review card ── */
 function ReviewCard({ review }) {
-  const name = review.reviewerName || review.name || "Customer";
-  const rating = review.rating || 0;
+  const name =
+    review.reviewerName || review.name || review.user?.name || "Customer";
+  const rating = Number(review.rating || 0);
   const comment = review.comment || review.body || "";
-  const date =
-    review.date || review.createdAt
-      ? new Date(review.date || review.createdAt).toLocaleDateString("en-NG", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        })
-      : "";
+  const dateStr = review.date || review.createdAt;
+  const date = dateStr
+    ? new Date(dateStr).toLocaleDateString("en-NG", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "";
 
   return (
     <div
@@ -220,7 +208,7 @@ function ReviewCard({ review }) {
             )}
           </div>
         </div>
-        <div style={{ display: "flex", gap: "2px", flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: "2px" }}>
           {Array.from({ length: 5 }, (_, i) => (
             <Star
               key={i}
@@ -250,6 +238,9 @@ function ReviewCard({ review }) {
   );
 }
 
+/* ══════════════════════════════
+   MAIN PAGE
+══════════════════════════════ */
 export default function ProductDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -260,29 +251,22 @@ export default function ProductDetailPage() {
   const [activeTab, setActiveTab] = useState("description");
   const [addedToCart, setAddedToCart] = useState(false);
 
-  /* ── Fetch product — works for both DummyJSON and custom ── */
-  const { data: product, isLoading, isError } = useProduct(id);
+  /* ── Fetch — works for UUID (DB) and numeric (DummyJSON) ── */
+  const { data: product, isLoading, isError, error } = useProduct(id);
 
-  /* ── Derive category slug for related products ── */
-  const categorySlug = (() => {
-    if (!product) return null;
-    // Custom products store category as slug
-    if (String(product.id).startsWith("custom_")) {
-      return product.category || null;
+  /* ── Get category string regardless of shape ── */
+  const categoryStr = (() => {
+    if (!product) return "";
+    if (typeof product.category === "object" && product.category !== null) {
+      return product.category.slug || product.category.name || "";
     }
-    // DummyJSON products store category as the raw apiCategory string
-    // We need to find our slug that maps to it
-    const { CATEGORIES } = require("../api/products.js"); // handled below via import
-    return product.category || null;
+    return String(product.category || "");
   })();
 
-  const { data: related = [] } = useRelatedProducts(
-    product?.category || "",
-    id,
-  );
+  const { data: related = [] } = useRelatedProducts(categoryStr, id);
 
-  /* ── Normalize product fields ── */
-  const normalized = product
+  /* ── Normalize both DummyJSON and DB shapes ── */
+  const p = product
     ? {
         id: product.id,
         title: product.title || "Untitled Product",
@@ -290,40 +274,38 @@ export default function ProductDetailPage() {
         price: Number(product.price) || 0,
         discountPercentage: Number(product.discountPercentage) || 0,
         stock: Number(product.stock) ?? 0,
-        brand: product.brand || product.category || "",
-        category: product.category || "",
+        brand: product.brand || categoryStr || "",
+        category: categoryStr,
         rating: Number(product.rating) || 0,
         reviews: Array.isArray(product.reviews) ? product.reviews : [],
-        thumbnail: product.thumbnail || "",
+        thumbnail:
+          product.thumbnail ||
+          (Array.isArray(product.images) ? product.images[0] : "") ||
+          "",
         images: Array.isArray(product.images) ? product.images : [],
         tags: Array.isArray(product.tags) ? product.tags : [],
-        isCustom: String(product.id).startsWith("custom_"),
       }
     : null;
 
-  const finalPrice = normalized
-    ? discountedPrice(normalized.price, normalized.discountPercentage)
-    : 0;
-  const savings = normalized ? normalized.price - finalPrice : 0;
-  const inStock = normalized ? normalized.stock > 0 : false;
-  const wishlisted = normalized ? isWishlisted(normalized.id) : false;
+  const finalPrice = p ? discountedPrice(p.price, p.discountPercentage) : 0;
+  const savings = p ? p.price - finalPrice : 0;
+  const inStock = p ? p.stock > 0 : false;
+  const wishlisted = p ? isWishlisted(p.id) : false;
 
   const handleAddToCart = () => {
-    if (!normalized || !inStock) return;
-    addItem({ ...normalized }, qty);
+    if (!p || !inStock) return;
+    addItem({ ...p }, qty);
     setAddedToCart(true);
     setTimeout(() => setAddedToCart(false), 2500);
   };
 
   const handleBuyNow = () => {
-    if (!normalized || !inStock) return;
-    addItem({ ...normalized }, qty);
+    if (!p || !inStock) return;
+    addItem({ ...p }, qty);
     navigate("/cart");
   };
 
-  /* ══════════════════════════════════
-     LOADING STATE
-  ══════════════════════════════════ */
+  /* ── Loading ── */
   if (isLoading)
     return (
       <div style={{ backgroundColor: "var(--bg-section)", minHeight: "100vh" }}>
@@ -334,7 +316,7 @@ export default function ProductDetailPage() {
             style={{
               display: "grid",
               gridTemplateColumns:
-                "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
+                "repeat(auto-fit,minmax(min(100%,320px),1fr))",
               gap: "32px",
             }}
           >
@@ -355,7 +337,7 @@ export default function ProductDetailPage() {
                 className="shimmer-bg"
               />
               <div
-                style={{ height: "24px", width: "90%", borderRadius: "4px" }}
+                style={{ height: "28px", width: "90%", borderRadius: "4px" }}
                 className="shimmer-bg"
               />
               <div
@@ -363,7 +345,7 @@ export default function ProductDetailPage() {
                 className="shimmer-bg"
               />
               <div
-                style={{ height: "40px", width: "35%", borderRadius: "4px" }}
+                style={{ height: "60px", borderRadius: "8px" }}
                 className="shimmer-bg"
               />
               <div
@@ -380,9 +362,7 @@ export default function ProductDetailPage() {
       </div>
     );
 
-  /* ══════════════════════════════════
-     ERROR / NOT FOUND
-  ══════════════════════════════════ */
+  /* ── Error / Not found ── */
   if (isError || !product)
     return (
       <div
@@ -415,7 +395,8 @@ export default function ProductDetailPage() {
               lineHeight: "1.6",
             }}
           >
-            This product may have been removed or the link is incorrect.
+            {error?.message ||
+              "This product may have been removed or the link is incorrect."}
           </p>
           <div
             style={{
@@ -445,8 +426,19 @@ export default function ProductDetailPage() {
             </button>
             <Link
               to="/"
-              className="btn-primary"
-              style={{ borderRadius: "8px", fontSize: "0.82rem" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                padding: "10px 20px",
+                backgroundColor: "var(--brand)",
+                border: "none",
+                borderRadius: "8px",
+                color: "#fff",
+                fontSize: "0.82rem",
+                fontWeight: "700",
+                textDecoration: "none",
+              }}
             >
               Browse Store
             </Link>
@@ -455,9 +447,7 @@ export default function ProductDetailPage() {
       </div>
     );
 
-  /* ══════════════════════════════════
-     MAIN RENDER
-  ══════════════════════════════════ */
+  /* ── Main render ── */
   return (
     <div style={{ backgroundColor: "var(--bg-section)", minHeight: "100vh" }}>
       {/* Breadcrumb */}
@@ -498,10 +488,10 @@ export default function ProductDetailPage() {
                 color: "var(--text-subtle)",
               }}
             />
-            {normalized.category && (
+            {p.category && (
               <>
                 <Link
-                  to={`/category/${normalized.category}`}
+                  to={`/category/${p.category}`}
                   style={{
                     color: "var(--text-muted)",
                     textDecoration: "none",
@@ -514,7 +504,7 @@ export default function ProductDetailPage() {
                     (e.currentTarget.style.color = "var(--text-muted)")
                   }
                 >
-                  {normalized.category}
+                  {p.category}
                 </Link>
                 <ChevronRight
                   style={{
@@ -535,7 +525,7 @@ export default function ProductDetailPage() {
                 maxWidth: "200px",
               }}
             >
-              {normalized.title}
+              {p.title}
             </span>
           </nav>
         </div>
@@ -548,65 +538,32 @@ export default function ProductDetailPage() {
           padding: "20px 16px 48px",
         }}
       >
-        {/* ── Main product section ── */}
+        {/* Product grid */}
         <div
           style={{
             display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(min(100%, 320px), 1fr))",
+            gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,320px),1fr))",
             gap: "32px",
             marginBottom: "32px",
             alignItems: "start",
           }}
         >
-          {/* Left — Gallery */}
+          {/* Gallery */}
           <div style={{ position: "sticky", top: "80px" }}>
-            {normalized.isCustom && (
-              <div
-                style={{
-                  marginBottom: "10px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  backgroundColor: "var(--brand-light)",
-                  border: "1px solid var(--brand-mid)",
-                  borderRadius: "99px",
-                  padding: "3px 10px",
-                }}
-              >
-                <CheckCircle
-                  style={{
-                    width: "11px",
-                    height: "11px",
-                    color: "var(--brand)",
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: "0.65rem",
-                    fontWeight: "700",
-                    color: "var(--brand)",
-                    letterSpacing: "0.06em",
-                  }}
-                >
-                  FEATURED PRODUCT
-                </span>
-              </div>
-            )}
             <Gallery
-              thumbnail={normalized.thumbnail}
-              images={normalized.images}
-              title={normalized.title}
+              thumbnail={p.thumbnail}
+              images={p.images}
+              title={p.title}
             />
           </div>
 
-          {/* Right — Product info */}
+          {/* Info */}
           <div
             style={{ display: "flex", flexDirection: "column", gap: "16px" }}
           >
             {/* Brand + title */}
             <div>
-              {normalized.brand && (
+              {p.brand && (
                 <p
                   style={{
                     fontSize: "0.72rem",
@@ -617,25 +574,22 @@ export default function ProductDetailPage() {
                     marginBottom: "6px",
                   }}
                 >
-                  {normalized.brand}
+                  {p.brand}
                 </p>
               )}
               <h1
                 style={{
                   fontFamily: "Georgia, serif",
-                  fontSize: "clamp(1.2rem, 3vw, 1.75rem)",
+                  fontSize: "clamp(1.2rem,3vw,1.75rem)",
                   fontWeight: "700",
                   color: "var(--text-primary)",
                   lineHeight: "1.25",
                   marginBottom: "10px",
                 }}
               >
-                {normalized.title}
+                {p.title}
               </h1>
-              <Stars
-                rating={normalized.rating}
-                count={normalized.reviews.length}
-              />
+              <Stars rating={p.rating} count={product.reviewCount} />
             </div>
 
             {/* Price */}
@@ -659,7 +613,7 @@ export default function ProductDetailPage() {
                 <span
                   style={{
                     fontFamily: "DM Sans, sans-serif",
-                    fontSize: "clamp(1.5rem, 4vw, 2rem)",
+                    fontSize: "clamp(1.5rem,4vw,2rem)",
                     fontWeight: "800",
                     color: "var(--brand)",
                     lineHeight: 1,
@@ -667,7 +621,7 @@ export default function ProductDetailPage() {
                 >
                   {formatPrice(finalPrice)}
                 </span>
-                {normalized.discountPercentage > 0.5 && (
+                {p.discountPercentage > 0.5 && (
                   <>
                     <span
                       style={{
@@ -677,7 +631,7 @@ export default function ProductDetailPage() {
                         lineHeight: 1.4,
                       }}
                     >
-                      {formatPrice(normalized.price)}
+                      {formatPrice(p.price)}
                     </span>
                     <span
                       style={{
@@ -689,7 +643,7 @@ export default function ProductDetailPage() {
                         borderRadius: "4px",
                       }}
                     >
-                      -{Math.round(normalized.discountPercentage)}% OFF
+                      -{Math.round(p.discountPercentage)}% OFF
                     </span>
                   </>
                 )}
@@ -708,7 +662,7 @@ export default function ProductDetailPage() {
               )}
             </div>
 
-            {/* Stock status */}
+            {/* Stock */}
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               {inStock ? (
                 <>
@@ -722,9 +676,7 @@ export default function ProductDetailPage() {
                       fontWeight: "600",
                     }}
                   >
-                    {normalized.stock < 10
-                      ? `Only ${normalized.stock} left in stock!`
-                      : "In Stock"}
+                    {p.stock < 10 ? `Only ${p.stock} left!` : "In Stock"}
                   </span>
                 </>
               ) : (
@@ -746,7 +698,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Tags */}
-            {normalized.tags.length > 0 && (
+            {p.tags.length > 0 && (
               <div
                 style={{
                   display: "flex",
@@ -762,7 +714,7 @@ export default function ProductDetailPage() {
                     color: "var(--text-subtle)",
                   }}
                 />
-                {normalized.tags.map((tag) => (
+                {p.tags.map((tag) => (
                   <span
                     key={tag}
                     style={{
@@ -781,7 +733,7 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Quantity selector */}
+            {/* Quantity */}
             {inStock && (
               <div>
                 <p
@@ -794,9 +746,7 @@ export default function ProductDetailPage() {
                 >
                   Quantity
                 </p>
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "0" }}
-                >
+                <div style={{ display: "flex", alignItems: "center" }}>
                   <button
                     onClick={() => setQty((q) => Math.max(1, q - 1))}
                     disabled={qty <= 1}
@@ -813,16 +763,7 @@ export default function ProductDetailPage() {
                       cursor: qty <= 1 ? "not-allowed" : "pointer",
                       color:
                         qty <= 1 ? "var(--text-subtle)" : "var(--text-primary)",
-                      transition: "background-color 0.15s",
                     }}
-                    onMouseEnter={(e) => {
-                      if (qty > 1)
-                        e.currentTarget.style.backgroundColor =
-                          "var(--bg-muted)";
-                    }}
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "var(--bg-card)")
-                    }
                   >
                     <Minus style={{ width: "14px", height: "14px" }} />
                   </button>
@@ -843,10 +784,8 @@ export default function ProductDetailPage() {
                     {qty}
                   </div>
                   <button
-                    onClick={() =>
-                      setQty((q) => Math.min(normalized.stock, q + 1))
-                    }
-                    disabled={qty >= normalized.stock}
+                    onClick={() => setQty((q) => Math.min(p.stock, q + 1))}
+                    disabled={qty >= p.stock}
                     style={{
                       width: "38px",
                       height: "38px",
@@ -857,22 +796,12 @@ export default function ProductDetailPage() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      cursor:
-                        qty >= normalized.stock ? "not-allowed" : "pointer",
+                      cursor: qty >= p.stock ? "not-allowed" : "pointer",
                       color:
-                        qty >= normalized.stock
+                        qty >= p.stock
                           ? "var(--text-subtle)"
                           : "var(--text-primary)",
-                      transition: "background-color 0.15s",
                     }}
-                    onMouseEnter={(e) => {
-                      if (qty < normalized.stock)
-                        e.currentTarget.style.backgroundColor =
-                          "var(--bg-muted)";
-                    }}
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor = "var(--bg-card)")
-                    }
                   >
                     <Plus style={{ width: "14px", height: "14px" }} />
                   </button>
@@ -880,7 +809,7 @@ export default function ProductDetailPage() {
               </div>
             )}
 
-            {/* Action buttons */}
+            {/* Buttons */}
             <div
               style={{ display: "flex", flexDirection: "column", gap: "10px" }}
             >
@@ -909,16 +838,6 @@ export default function ProductDetailPage() {
                     ? "0 4px 14px rgba(79,125,82,0.3)"
                     : "none",
                 }}
-                onMouseEnter={(e) => {
-                  if (inStock && !addedToCart)
-                    e.currentTarget.style.backgroundColor = "var(--brand-dark)";
-                }}
-                onMouseLeave={(e) => {
-                  if (!addedToCart)
-                    e.currentTarget.style.backgroundColor = inStock
-                      ? "var(--brand)"
-                      : "var(--bg-muted)";
-                }}
               >
                 {addedToCart ? (
                   <>
@@ -932,7 +851,6 @@ export default function ProductDetailPage() {
                   </>
                 )}
               </button>
-
               <button
                 onClick={handleBuyNow}
                 disabled={!inStock}
@@ -951,20 +869,11 @@ export default function ProductDetailPage() {
                   cursor: inStock ? "pointer" : "not-allowed",
                   transition: "all 0.2s",
                 }}
-                onMouseEnter={(e) => {
-                  if (inStock)
-                    e.currentTarget.style.backgroundColor = "#ea580c";
-                }}
-                onMouseLeave={(e) => {
-                  if (inStock)
-                    e.currentTarget.style.backgroundColor = "#f97316";
-                }}
               >
                 <Zap style={{ width: "18px", height: "18px" }} /> Buy Now
               </button>
-
               <button
-                onClick={() => toggle(normalized)}
+                onClick={() => toggle(p)}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -996,7 +905,7 @@ export default function ProductDetailPage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
+                gridTemplateColumns: "repeat(3,1fr)",
                 gap: "8px",
               }}
             >
@@ -1050,7 +959,7 @@ export default function ProductDetailPage() {
               ))}
             </div>
 
-            {/* Product meta */}
+            {/* Meta info */}
             <div
               style={{
                 backgroundColor: "var(--bg-card)",
@@ -1060,16 +969,16 @@ export default function ProductDetailPage() {
               }}
             >
               {[
-                { label: "Category", value: normalized.category },
-                { label: "Brand", value: normalized.brand },
+                { label: "Category", value: p.category },
+                { label: "Brand", value: p.brand },
                 {
                   label: "Stock",
-                  value: inStock ? `${normalized.stock} units` : "Out of stock",
+                  value: inStock ? `${p.stock} units` : "Out of stock",
                 },
-                { label: "Rating", value: `${normalized.rating}/5` },
+                { label: "Rating", value: `${p.rating}/5` },
               ]
                 .filter((r) => r.value)
-                .map((row, i) => (
+                .map((row, i, arr) => (
                   <div
                     key={i}
                     style={{
@@ -1078,7 +987,9 @@ export default function ProductDetailPage() {
                       gap: "12px",
                       padding: "6px 0",
                       borderBottom:
-                        i < 3 ? "1px solid var(--border-light)" : "none",
+                        i < arr.length - 1
+                          ? "1px solid var(--border-light)"
+                          : "none",
                     }}
                   >
                     <span
@@ -1107,7 +1018,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* ── Tabs: Description / Reviews ── */}
+        {/* Tabs */}
         <div
           style={{
             backgroundColor: "var(--bg-card)",
@@ -1117,7 +1028,6 @@ export default function ProductDetailPage() {
             marginBottom: "32px",
           }}
         >
-          {/* Tab bar */}
           <div
             style={{
               display: "flex",
@@ -1127,10 +1037,7 @@ export default function ProductDetailPage() {
           >
             {[
               { id: "description", label: "Description" },
-              {
-                id: "reviews",
-                label: `Reviews (${normalized.reviews.length})`,
-              },
+              { id: "reviews", label: `Reviews (${p.reviews.length})` },
               { id: "shipping", label: "Shipping & Returns" },
             ].map((tab) => (
               <button
@@ -1156,114 +1063,77 @@ export default function ProductDetailPage() {
             ))}
           </div>
 
-          {/* Tab content */}
           <div style={{ padding: "20px 24px" }}>
             {activeTab === "description" && (
-              <div>
-                <p
+              <p
+                style={{
+                  fontSize: "0.9rem",
+                  color: "var(--text-muted)",
+                  lineHeight: "1.8",
+                  margin: 0,
+                }}
+              >
+                {p.description}
+              </p>
+            )}
+            {activeTab === "reviews" &&
+              (p.reviews.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "32px" }}>
+                  <Star
+                    style={{
+                      width: "36px",
+                      height: "36px",
+                      color: "var(--text-subtle)",
+                      margin: "0 auto 10px",
+                    }}
+                  />
+                  <p style={{ color: "var(--text-muted)" }}>
+                    No reviews yet. Be the first!
+                  </p>
+                </div>
+              ) : (
+                <div
                   style={{
-                    fontSize: "0.9rem",
-                    color: "var(--text-muted)",
-                    lineHeight: "1.8",
-                    margin: 0,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
                   }}
                 >
-                  {normalized.description}
-                </p>
-                {normalized.tags.length > 0 && (
-                  <div
-                    style={{
-                      marginTop: "16px",
-                      display: "flex",
-                      gap: "6px",
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    {normalized.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        style={{
-                          fontSize: "0.72rem",
-                          color: "var(--text-muted)",
-                          backgroundColor: "var(--bg-muted)",
-                          border: "1px solid var(--border-light)",
-                          padding: "3px 10px",
-                          borderRadius: "99px",
-                        }}
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {activeTab === "reviews" && (
-              <div>
-                {normalized.reviews.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "32px 16px" }}>
-                    <Star
-                      style={{
-                        width: "36px",
-                        height: "36px",
-                        color: "var(--text-subtle)",
-                        margin: "0 auto 10px",
-                      }}
-                    />
-                    <p
-                      style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}
-                    >
-                      No reviews yet. Be the first to review this product!
-                    </p>
-                  </div>
-                ) : (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "10px",
-                    }}
-                  >
-                    {normalized.reviews.map((review, i) => (
-                      <ReviewCard key={i} review={review} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
+                  {p.reviews.map((review, i) => (
+                    <ReviewCard key={i} review={review} />
+                  ))}
+                </div>
+              ))}
             {activeTab === "shipping" && (
               <div
                 style={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: "14px",
+                  gap: "12px",
                 }}
               >
                 {[
                   {
                     icon: <Truck style={{ width: "18px", height: "18px" }} />,
                     title: "Standard Delivery",
-                    detail: "2–5 business days in Lagos, 3–7 for other states.",
+                    detail: "2–5 days Lagos, 3–7 days other states.",
                   },
                   {
                     icon: <Zap style={{ width: "18px", height: "18px" }} />,
                     title: "Express Delivery",
-                    detail: "1–2 days available in Lagos and Abuja.",
+                    detail: "1–2 days in Lagos and Abuja.",
                   },
                   {
                     icon: <Package style={{ width: "18px", height: "18px" }} />,
                     title: "Free Shipping",
-                    detail: "On all orders over ₦80,000 (approx $50 USD).",
+                    detail: "On orders over ₦80,000.",
                   },
                   {
                     icon: (
                       <RotateCcw style={{ width: "18px", height: "18px" }} />
                     ),
                     title: "30-Day Returns",
-                    detail:
-                      "Return unused items in original packaging within 30 days for a full refund.",
+                    detail: "Return unused items in original packaging.",
                   },
                 ].map((item, i) => (
                   <div
@@ -1323,7 +1193,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        {/* ── Related products ── */}
+        {/* Related products */}
         {related.length > 0 && (
           <div
             style={{
@@ -1353,9 +1223,9 @@ export default function ProductDetailPage() {
               >
                 Related Products
               </h2>
-              {normalized.category && (
+              {p.category && (
                 <Link
-                  to={`/category/${normalized.category}`}
+                  to={`/category/${p.category}`}
                   style={{
                     fontSize: "0.72rem",
                     fontWeight: "700",
@@ -1374,17 +1244,17 @@ export default function ProductDetailPage() {
               style={{
                 display: "grid",
                 gridTemplateColumns:
-                  "repeat(auto-fill, minmax(min(100%, 160px), 1fr))",
+                  "repeat(auto-fill,minmax(min(100%,160px),1fr))",
                 gap: "1px",
                 backgroundColor: "var(--border-light)",
               }}
             >
-              {related.map((p) => (
+              {related.map((prod) => (
                 <div
-                  key={p.id}
+                  key={prod.id}
                   style={{ backgroundColor: "var(--bg-card)", padding: "8px" }}
                 >
-                  <ProductCard product={p} />
+                  <ProductCard product={prod} />
                 </div>
               ))}
             </div>

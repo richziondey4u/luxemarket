@@ -10,15 +10,10 @@ import {
   ShoppingCart,
   RotateCcw,
   ChevronDown,
-  Zap,
-  Sparkles,
-  Package,
-  Truck,
-  CreditCard,
-  HelpCircle,
 } from "lucide-react";
 import { useCart } from "../../context/CartContext.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
+import { apiClient } from "../../lib/api.js";
 import { formatPrice } from "../../api/products.js";
 import { Link } from "react-router-dom";
 
@@ -36,76 +31,6 @@ const QUICK_REPLIES = [
   { label: "📱 Electronics", msg: "Show me the best electronics deals" },
   { label: "👕 Fashion", msg: "What fashion items do you have?" },
 ];
-
-/* ── Build system prompt with live context ── */
-// Replace just the buildSystemPrompt function and sendMessage call:
-
-const buildSystemPrompt = ({ cartItems, user, cartTotal, cartCount }) => {
-  const customProducts = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("lm_custom_products") || "[]");
-    } catch {
-      return [];
-    }
-  })();
-
-  const recentOrders = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("lm_orders") || "[]").slice(0, 5);
-    } catch {
-      return [];
-    }
-  })();
-
-  return `You are LuxeBot, a friendly AI shopping assistant for LuxeMarket — Nigeria's premier online marketplace.
-
-STORE INFO:
-- Location: Lagos, Nigeria (delivers to all 36 states)
-- Phone: +234 803 983 0412
-- Email: richzion@luxemarket.com
-- Currency: Nigerian Naira (₦). USD prices × 1,600
-
-FEATURED PRODUCTS IN STORE RIGHT NOW:
-${
-  customProducts.length > 0
-    ? customProducts
-        .map((p) => `• ${p.title} — ${formatPrice(p.price)} (${p.category})`)
-        .join("\n")
-    : "• Browse our full collection at luxemarket.com"
-}
-
-CATEGORIES: 📱 Smartphones | 💻 Laptops | 📲 Tablets | 🌸 Fragrances | ✨ Skincare | 🛒 Groceries | 🏠 Home & Decor | 👕 Fashion | 👟 Shoes | ⌚ Watches | 👜 Bags | 💍 Jewellery | ⚽ Sports | 🚗 Automotive
-
-PAGES:
-- Flash Sale: /flash-sale
-- New Arrivals: /new-arrivals
-- Cart: /cart | Track Order: /track-order | FAQ: /faq | Contact: /contact
-
-POLICIES:
-- Free shipping on orders over ₦80,000
-- 30-day hassle-free returns
-- Paystack secure payment (card, bank transfer, USSD, pay-on-delivery Lagos)
-- Delivery: 2–5 days Lagos, 3–7 other states
-
-CUSTOMER: ${user ? `${user.name} (${user.email})` : "Guest"}
-
-CART: ${
-    cartCount > 0
-      ? `${cartCount} item(s) — Total: ${cartTotal}\nItems: ${cartItems.map((i) => `${i.product?.title} ×${i.quantity}`).join(", ")}`
-      : "Empty"
-  }
-
-${recentOrders.length > 0 ? `RECENT ORDERS: ${recentOrders.map((o) => `Order ${o.id} — ${o.status}`).join(", ")}` : ""}
-
-RULES:
-1. Be warm and helpful — like a knowledgeable Lagos shop assistant
-2. Keep responses SHORT (2–3 sentences max) unless listing items
-3. Use emojis naturally but sparingly
-4. Format links as [Label](/path)
-5. Never make up tracking info — direct to [Track Order](/track-order)
-6. End with one helpful follow-up question when it adds value
-7. If you mention a product from the store, link to it`;
-};
 
 /* ── Render text with markdown links ── */
 function RenderText({ text, isBot }) {
@@ -262,7 +187,6 @@ export default function ChatBot() {
 
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
-  const abortRef = useRef(null);
 
   const {
     items: cartItems = [],
@@ -311,35 +235,16 @@ export default function ChatBot() {
           .filter((m) => m.content !== "...")
           .map((m) => ({ role: m.role, content: m.content }));
 
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 600,
-            system: buildSystemPrompt({
-              cartItems,
-              user,
-              cartTotal: formatPrice(cartTotal),
-              cartCount,
-            }),
-            messages: [...history, userMsg],
-          }),
-        });
+        // Backend builds the system prompt with live Prisma data
+        // (products, cart, orders, wishlist) and calls Anthropic server-side -
+        // the API key never touches the browser.
+        const data = await apiClient.sendChatMessage(text, history);
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(err?.error?.message || `HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        const reply = data?.content?.[0]?.text?.trim();
-
-        if (!reply) throw new Error("Empty response");
+        if (!data?.reply) throw new Error("Empty response");
 
         setMessages((prev) => [
           ...prev.slice(0, -1),
-          { role: "assistant", content: reply },
+          { role: "assistant", content: data.reply },
         ]);
       } catch (err) {
         console.error("LuxeBot error:", err);
@@ -349,13 +254,13 @@ export default function ChatBot() {
         let fallback = "";
 
         if (lower.includes("delivery") || lower.includes("shipping")) {
-          fallback = `🚚 Delivery takes 2–5 days in Lagos and 3–7 days for other states.\n\nFree shipping on orders over ₦50,000! Express delivery (1–2 days) is available in Lagos and Abuja.`;
+          fallback = `🚚 Delivery takes 2–5 days in Lagos and 3–7 days for other states.\n\nFree shipping on orders over ₦80,000! Express delivery (1–2 days) is available in Lagos and Abuja.`;
         } else if (lower.includes("return") || lower.includes("refund")) {
           fallback = `↩️ We have a **30-day hassle-free return policy**.\n\nItems must be unused and in original packaging. Refunds are processed within 3–5 business days. Visit [Contact Us](/contact) for help.`;
         } else if (lower.includes("payment") || lower.includes("pay")) {
           fallback = `💳 We accept cards, bank transfer, USSD, and mobile money via **Paystack**.\n\nPay on delivery is available in Lagos for orders under ₦50,000.`;
         } else if (lower.includes("track") || lower.includes("order")) {
-          fallback = `📦 You can track your order on the [Track Order](/track-order) page.\n\nJust enter your Order ID (from your confirmation email) and you'll see the latest status.`;
+          fallback = `📦 You can track your order on the [Track Order](/track-order) page.\n\nJust enter your Order Number (from your confirmation email) and you'll see the latest status.`;
         } else if (lower.includes("cart")) {
           fallback =
             cartCount > 0
@@ -385,7 +290,7 @@ export default function ChatBot() {
         setLoading(false);
       }
     },
-    [input, loading, messages, cartItems, user, cartTotal, cartCount],
+    [input, loading, messages, cartCount, cartTotal],
   );
 
   const handleOpen = () => {
@@ -411,11 +316,6 @@ export default function ChatBot() {
     ]);
     setInput("");
   };
-
-  const visibleMessages = messages.filter((_, i) => {
-    // Always show all messages
-    return true;
-  });
 
   return (
     <>
@@ -617,7 +517,7 @@ export default function ChatBot() {
                   </span>
                 </div>
 
-                {visibleMessages.map((msg, i) => (
+                {messages.map((msg, i) => (
                   <Bubble key={i} msg={msg} />
                 ))}
                 <div ref={bottomRef} />

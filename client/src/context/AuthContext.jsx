@@ -63,7 +63,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   const updateAddress = useCallback(async (data) => {
-    return apiFetch("/users/address", { method: "PUT", body: data });
+    const d = await apiFetch("/users/address", {
+      method: "PUT",
+      body: data,
+    });
+
+    setUser((prev) => ({
+      ...prev,
+      address: d.data.address,
+    }));
+
+    return d.data.address;
   }, []);
 
   const refreshSession = useCallback(async () => {

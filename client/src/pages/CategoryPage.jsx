@@ -1,10 +1,11 @@
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronRight, SlidersHorizontal, X, ChevronDown } from "lucide-react";
 import { useProductsByCategory } from "../hooks/useProducts.js";
-import { getCategoryBySlug, CATEGORIES, formatPrice } from "../api/products.js";
+import { useCategories } from "../hooks/useProducts.js";
 import ProductCard from "../components/product/ProductCard.jsx";
 import ProductSkeleton from "../components/product/ProductSkeleton.jsx";
+import { api, formatPrice } from "../api/products";
 
 const SORT_OPTIONS = [
   { value: "default", label: "Default" },
@@ -22,16 +23,26 @@ const RATING_FILTERS = [
 
 export default function CategoryPage() {
   const { slug } = useParams();
-  const category = getCategoryBySlug(slug);
+  const { data: categories = [] } = useCategories();
+  const category = categories.find((cat) => cat.slug === slug) || null;
 
   const [sort, setSort] = useState("default");
-  const [maxPrice, setMaxPrice] = useState(2000);
+  const [maxPrice, setMaxPrice] = useState(0);
   const [minRating, setMinRating] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
 
   // Fetch up to 100 products (DummyJSON max per category)
-  const { data, isLoading, isError } = useProductsByCategory(slug, 100, 0);
+  const { data, isLoading, isError } = useProductsByCategory(slug, 100);
   const all = data?.products || [];
+
+  const highestPrice =
+    all.length > 0 ? Math.max(...all.map((p) => p.price)) : 0;
+
+  useEffect(() => {
+    if (highestPrice > 0) {
+      setMaxPrice(highestPrice);
+    }
+  }, [highestPrice]);
 
   const filtered = all.filter(
     (p) => p.price <= maxPrice && p.rating >= minRating,
@@ -111,7 +122,7 @@ export default function CategoryPage() {
         <input
           type="range"
           min={0}
-          max={2000}
+          max={highestPrice || 5000000}
           step={10}
           value={maxPrice}
           onChange={(e) => setMaxPrice(+e.target.value)}
@@ -223,7 +234,7 @@ export default function CategoryPage() {
               }}
             />
             <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>
-              {category.label}
+              {category.name}
             </span>
           </nav>
         </div>
@@ -259,7 +270,7 @@ export default function CategoryPage() {
                 marginBottom: "3px",
               }}
             >
-              {category.label}
+              {category.name}
             </h1>
             <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.82rem" }}>
               {isLoading
@@ -506,37 +517,40 @@ export default function CategoryPage() {
             Browse Other Categories
           </p>
           <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {CATEGORIES.filter((c) => c.slug !== slug).map((cat) => (
-              <Link
-                key={cat.slug}
-                to={`/category/${cat.slug}`}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "5px",
-                  padding: "5px 12px",
-                  backgroundColor: "var(--bg-section)",
-                  border: "1px solid var(--border-light)",
-                  borderRadius: "99px",
-                  fontSize: "0.75rem",
-                  color: "var(--text-secondary)",
-                  textDecoration: "none",
-                  transition: "all 0.15s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = "var(--brand-mid)";
-                  e.currentTarget.style.color = "var(--brand)";
-                  e.currentTarget.style.backgroundColor = "var(--brand-light)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = "var(--border-light)";
-                  e.currentTarget.style.color = "var(--text-secondary)";
-                  e.currentTarget.style.backgroundColor = "var(--bg-section)";
-                }}
-              >
-                <span>{cat.icon}</span> {cat.label}
-              </Link>
-            ))}
+            {categories
+              .filter((c) => c.slug !== slug)
+              .map((cat) => (
+                <Link
+                  key={cat.slug}
+                  to={`/category/${cat.slug}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "5px",
+                    padding: "5px 12px",
+                    backgroundColor: "var(--bg-section)",
+                    border: "1px solid var(--border-light)",
+                    borderRadius: "99px",
+                    fontSize: "0.75rem",
+                    color: "var(--text-secondary)",
+                    textDecoration: "none",
+                    transition: "all 0.15s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "var(--brand-mid)";
+                    e.currentTarget.style.color = "var(--brand)";
+                    e.currentTarget.style.backgroundColor =
+                      "var(--brand-light)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "var(--border-light)";
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                    e.currentTarget.style.backgroundColor = "var(--bg-section)";
+                  }}
+                >
+                  <span>{cat.icon}</span> {cat.name}
+                </Link>
+              ))}
           </div>
         </div>
       </div>

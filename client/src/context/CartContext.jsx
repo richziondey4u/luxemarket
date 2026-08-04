@@ -6,23 +6,13 @@ import {
   useCallback,
 } from "react";
 import { useAuth } from "./AuthContext.jsx";
+import { apiClient } from "../lib/api.js";
 
 const CartContext = createContext(null);
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
-async function apiFetch(path, opts = {}) {
-  const res = await fetch(`${API}${path}`, {
-    credentials: "include",
-    headers: { "Content-Type": "application/json", ...opts.headers },
-    ...opts,
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Request failed");
-  return data;
-}
-
-// Local storage cart for guests
+// Guest cart persistence - only used when NOT logged in, since there's
+// no userId to attach a backend cart to. Real accounts always use the
+// backend cart via apiClient below.
 const LOCAL_KEY = "lm_cart_guest";
 const getLocal = () => {
   try {
@@ -35,25 +25,31 @@ const setLocal = (items) =>
   localStorage.setItem(LOCAL_KEY, JSON.stringify(items));
 
 export function CartProvider({ children }) {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Load cart — from backend if logged in, localStorage if guest
+  // Load cart - from backend if logged in, localStorage if guest
   const loadCart = useCallback(async () => {
     if (authLoading) return;
+
     if (isAuthenticated) {
+      setLoading(true);
       try {
-        const d = await apiFetch("/users/cart");
-        // Normalize backend cart items to match frontend shape
-        const normalized = (d.data.items || []).map((item) => ({
-          key: item.id,
+        const res = await apiClient.getCart();
+        const normalized = (res.data.items || []).map((item) => ({
+          key: item.id, // cart item id
+          productId: item.productId,
           quantity: item.quantity,
           product: item.product,
         }));
         setItems(normalized);
-      } catch {
-        setItems([]);
+      } catch (err) {
+        console.error("Failed to load cart:", err);
+        // Keep previous items rather than wiping the cart on a transient
+        // network error - a failed fetch shouldn't look like an empty cart.
+      } finally {
+        setLoading(false);
       }
     } else {
       setItems(getLocal());
@@ -71,13 +67,14 @@ export function CartProvider({ children }) {
       if (guestCart.length > 0) {
         Promise.all(
           guestCart.map((item) =>
-            apiFetch("/users/cart", {
-              method: "POST",
-              body: {
+            apiClient
+              .addToCart({
                 productId: String(item.product?.id || item.productId),
                 quantity: item.quantity,
-              },
-            }).catch(() => {}),
+              })
+              .catch((err) => {
+                console.error("Failed to migrate guest cart item:", err);
+              }),
           ),
         ).then(() => {
           localStorage.removeItem(LOCAL_KEY);
@@ -87,78 +84,63 @@ export function CartProvider({ children }) {
         loadCart();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authLoading]);
 
   const addItem = useCallback(
     async (product, qty = 1) => {
+      const productId = String(product.id);
+
       if (isAuthenticated) {
         try {
-          // For custom products (not in backend DB), store locally with user tag
-          if (String(product.id).startsWith("custom_")) {
-            const existing = items.find(
-              (i) => String(i.product?.id) === String(product.id),
-            );
-            if (existing) {
-              setItems((prev) =>
-                prev.map((i) =>
-                  String(i.product?.id) === String(product.id)
-                    ? { ...i, quantity: i.quantity + qty }
-                    : i,
-                ),
-              );
-            } else {
-              setItems((prev) => [
-                ...prev,
-                { key: `cart_${Date.now()}`, product, quantity: qty },
-              ]);
-            }
-            return;
-          }
-          await apiFetch("/users/cart", {
-            method: "POST",
-            body: { productId: String(product.id), quantity: qty },
-          });
+          await apiClient.addToCart({ productId, quantity: qty });
           await loadCart();
         } catch (err) {
           console.error("Add to cart failed:", err);
+          throw err; // let the UI surface this instead of failing silently
         }
-      } else {
-        // Guest cart
-        setItems((prev) => {
-          const exists = prev.find(
-            (i) => String(i.product?.id || i.productId) === String(product.id),
-          );
-          const updated = exists
-            ? prev.map((i) =>
-                String(i.product?.id || i.productId) === String(product.id)
-                  ? { ...i, quantity: i.quantity + qty }
-                  : i,
-              )
-            : [...prev, { key: `local_${Date.now()}`, product, quantity: qty }];
-          setLocal(updated);
-          return updated;
-        });
+        return;
       }
+
+      // Guest - localStorage
+      setItems((prev) => {
+        const exists = prev.find(
+          (i) => String(i.product?.id || i.productId) === productId,
+        );
+        const updated = exists
+          ? prev.map((i) =>
+              String(i.product?.id || i.productId) === productId
+                ? { ...i, quantity: i.quantity + qty }
+                : i,
+            )
+          : [...prev, { key: `local_${Date.now()}`, product, quantity: qty }];
+        setLocal(updated);
+        return updated;
+      });
     },
-    [isAuthenticated, items, loadCart],
+    [isAuthenticated, loadCart],
   );
 
   const removeItem = useCallback(
     async (productId) => {
-      if (isAuthenticated && !String(productId).startsWith("custom_")) {
+      if (isAuthenticated) {
         try {
-          await apiFetch(`/users/cart/${productId}`, { method: "DELETE" });
+          await apiClient.removeFromCart(productId);
           await loadCart();
-        } catch {}
-      } else {
-        setItems((prev) => {
-          const updated = prev.filter(
-            (i) => String(i.product?.id || i.productId) !== String(productId),
-          );
-          if (!isAuthenticated) setLocal(updated);
-          return updated;
-        });
+        } catch (err) {
+          console.error("Remove from cart failed:", err);
+          throw err;
+        }
+        return;
       }
+
+      setItems((prev) => {
+        const updated = prev.filter(
+          (i) => String(i.product?.id || i.productId) !== String(productId),
+        );
+        setLocal(updated);
+        return updated;
+      });
     },
     [isAuthenticated, loadCart],
   );
@@ -166,28 +148,29 @@ export function CartProvider({ children }) {
   const updateQuantity = useCallback(
     async (productId, quantity) => {
       if (quantity < 1) {
-        removeItem(productId);
+        return removeItem(productId);
+      }
+
+      if (isAuthenticated) {
+        try {
+          await apiClient.updateCartItem(productId, quantity);
+          await loadCart();
+        } catch (err) {
+          console.error("Update cart quantity failed:", err);
+          throw err;
+        }
         return;
       }
-      if (isAuthenticated && !String(productId).startsWith("custom_")) {
-        try {
-          await apiFetch(`/users/cart/${productId}`, {
-            method: "PUT",
-            body: { quantity },
-          });
-          await loadCart();
-        } catch {}
-      } else {
-        setItems((prev) => {
-          const updated = prev.map((i) =>
-            String(i.product?.id || i.productId) === String(productId)
-              ? { ...i, quantity }
-              : i,
-          );
-          if (!isAuthenticated) setLocal(updated);
-          return updated;
-        });
-      }
+
+      setItems((prev) => {
+        const updated = prev.map((i) =>
+          String(i.product?.id || i.productId) === String(productId)
+            ? { ...i, quantity }
+            : i,
+        );
+        setLocal(updated);
+        return updated;
+      });
     },
     [isAuthenticated, loadCart, removeItem],
   );
@@ -195,8 +178,10 @@ export function CartProvider({ children }) {
   const clearCart = useCallback(async () => {
     if (isAuthenticated) {
       try {
-        await apiFetch("/users/cart", { method: "DELETE" });
-      } catch {}
+        await apiClient.clearCart();
+      } catch (err) {
+        console.error("Clear cart failed:", err);
+      }
     } else {
       localStorage.removeItem(LOCAL_KEY);
     }

@@ -10,9 +10,9 @@ import {
 import {
   useNewArrivals,
   useBestSellers,
+  useCategories,
   useFeaturedProducts,
 } from "../hooks/useProducts.js";
-import { CATEGORIES } from "../api/products.js";
 import ProductCard from "../components/product/ProductCard.jsx";
 import ProductSkeleton from "../components/product/ProductSkeleton.jsx";
 
@@ -28,13 +28,13 @@ export default function NewArrivalsPage() {
   const { data: newArrivals = [], isLoading: nl } = useNewArrivals();
   const { data: bestSellers = [], isLoading: bl } = useBestSellers();
   const { data: featured = [], isLoading: fl } = useFeaturedProducts(16);
+  const { data: categories = [] } = useCategories();
 
   const tabData = {
     all: { products: newArrivals, loading: nl },
     trending: { products: bestSellers, loading: bl },
     picks: { products: featured, loading: fl },
   };
-
   const { products: current, loading: isLoading } = tabData[activeTab];
 
   return (
@@ -211,7 +211,7 @@ export default function NewArrivalsPage() {
                 gap: "8px",
               }}
             >
-              {CATEGORIES.slice(0, 6).map((cat) => (
+              {categories.slice(0, 6).map((cat) => (
                 <Link
                   key={cat.slug}
                   to={`/category/${cat.slug}`}

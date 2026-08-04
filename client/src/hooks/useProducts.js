@@ -1,11 +1,18 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/products.js";
 
+export const useCategories = () =>
+  useQuery({
+    queryKey: ["categories"],
+    queryFn: api.getCategories,
+    staleTime: 5 * 60_000,
+  });
+
 export const useFeaturedProducts = (limit = 20) =>
   useQuery({
     queryKey: ["featured", limit],
     queryFn: () => api.getFeaturedProducts(limit),
-    staleTime: 0, // Always refetch so custom products appear immediately
+    staleTime: 60_000,
   });
 
 export const useProductsByCategory = (slug, limit = 100) =>
@@ -13,7 +20,7 @@ export const useProductsByCategory = (slug, limit = 100) =>
     queryKey: ["category", slug, limit],
     queryFn: () => api.getProductsByCategory(slug, limit),
     enabled: !!slug,
-    staleTime: 0,
+    staleTime: 60_000,
   });
 
 export const useProduct = (id) =>
@@ -21,34 +28,28 @@ export const useProduct = (id) =>
     queryKey: ["product", id],
     queryFn: () => api.getProduct(id),
     enabled: !!id,
-    staleTime: 0,
-    retry: (failureCount, error) => {
-      // Don't retry for not-found custom products
-      if (error?.message === "Product not found") return false;
-      return failureCount < 2;
-    },
+    retry: false,
   });
 
-export const useSearchProducts = (query) =>
+export const useSearchProducts = (q) =>
   useQuery({
-    queryKey: ["search", query],
-    queryFn: () => api.searchProducts(query),
-    enabled: !!query && query.length > 1,
-    staleTime: 0,
+    queryKey: ["search", q],
+    queryFn: () => api.searchProducts(q),
+    enabled: !!q && q.length > 1,
   });
 
 export const useNewArrivals = () =>
   useQuery({
     queryKey: ["new-arrivals"],
     queryFn: api.getNewArrivals,
-    staleTime: 0,
+    staleTime: 60_000,
   });
 
 export const useBestSellers = () =>
   useQuery({
     queryKey: ["best-sellers"],
     queryFn: api.getBestSellers,
-    staleTime: 0,
+    staleTime: 60_000,
   });
 
 export const useRelatedProducts = (slug, excludeId) =>
@@ -56,5 +57,4 @@ export const useRelatedProducts = (slug, excludeId) =>
     queryKey: ["related", slug, excludeId],
     queryFn: () => api.getRelatedProducts(slug, excludeId),
     enabled: !!slug && !!excludeId,
-    staleTime: 0,
   });

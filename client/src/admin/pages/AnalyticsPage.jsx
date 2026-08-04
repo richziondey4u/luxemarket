@@ -1,22 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { DollarSign, ShoppingCart, Users, TrendingUp } from "lucide-react";
 import StatCard from "../components/StatCard.jsx";
 import { formatPrice } from "../../api/products.js";
-
-const getOrders = () => {
-  try {
-    return JSON.parse(localStorage.getItem("lm_orders") || "[]");
-  } catch {
-    return [];
-  }
-};
-const getUsers = () => {
-  try {
-    return JSON.parse(localStorage.getItem("lm_users") || "[]");
-  } catch {
-    return [];
-  }
-};
+import { apiClient } from "../../lib/api.js";
 
 const STATUS_COLORS = {
   paid: "#059669",
@@ -27,55 +13,46 @@ const STATUS_COLORS = {
 };
 
 export default function AnalyticsPage() {
-  const orders = getOrders();
-  const users = getUsers();
 
-  const stats = useMemo(() => {
-    const netRev = orders
-      .filter((o) => o.status !== "cancelled")
-      .reduce((s, o) => s + (o.total || 0), 0);
-    const grossRev = orders.reduce((s, o) => s + (o.total || 0), 0);
-    const paid = orders.filter((o) =>
-      ["paid", "delivered"].includes(o.status),
-    ).length;
-    const avgOrder = paid > 0 ? netRev / paid : 0;
-    const conversion =
-      users.length > 0 ? Math.round((orders.length / users.length) * 100) : 0;
-    return { netRev, grossRev, paid, avgOrder, conversion };
-  }, [orders, users]);
+  const [analytics, setAnalytics] = useState({
+  thisMonthRevenue: 0,
+  lastMonthRevenue: 0,
+  thisMonthOrders: 0,
+  revenueGrowth: null,
+  ordersByStatus: [],
+  topProducts: [],
+});
 
-  const statusBreakdown = useMemo(
-    () =>
-      ["paid", "pending", "shipped", "delivered", "cancelled"].map((s) => ({
-        label: s.charAt(0).toUpperCase() + s.slice(1),
-        count: orders.filter((o) => o.status === s).length,
-        pct:
-          orders.length > 0
-            ? Math.round(
-                (orders.filter((o) => o.status === s).length / orders.length) *
-                  100,
-              )
-            : 0,
-        color: STATUS_COLORS[s],
-      })),
-    [orders],
+const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const loadAnalytics = async () => {
+    try {
+      const res = await apiClient.getAnalytics();
+      setAnalytics(res.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadAnalytics();
+}, []);
+
+if (loading)
+  return (
+    <div
+      style={{
+        minHeight: "70vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div className="loader" />
+    </div>
   );
-
-  const topCustomers = useMemo(
-    () =>
-      getUsers()
-        .map((u) => ({
-          ...u,
-          spent: orders
-            .filter((o) => o.userId === u.id && o.status !== "cancelled")
-            .reduce((s, o) => s + (o.total || 0), 0),
-          orderCount: orders.filter((o) => o.userId === u.id).length,
-        }))
-        .sort((a, b) => b.spent - a.spent)
-        .slice(0, 5),
-    [orders],
-  );
-
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <div>
@@ -107,7 +84,7 @@ export default function AnalyticsPage() {
         <StatCard
           icon={<DollarSign style={{ width: "18px", height: "18px" }} />}
           title="Net Revenue"
-          value={formatPrice(stats.netRev)}
+          value={formatPrice(analytics.thisMonthRevenue)}
           sub="Excl. cancelled"
           trend="+12%"
           trendUp
@@ -116,21 +93,23 @@ export default function AnalyticsPage() {
         <StatCard
           icon={<DollarSign style={{ width: "18px", height: "18px" }} />}
           title="Gross Revenue"
-          value={formatPrice(stats.grossRev)}
+          value={formatPrice(analytics.lastMonthRevenue)}
           sub="All orders"
           color="#059669"
         />
         <StatCard
           icon={<ShoppingCart style={{ width: "18px", height: "18px" }} />}
           title="Avg Order"
-          value={formatPrice(stats.avgOrder)}
+          value={analytics.thisMonthOrders}
           sub="Per completed order"
           color="#2563eb"
         />
         <StatCard
           icon={<TrendingUp style={{ width: "18px", height: "18px" }} />}
           title="Conversion"
-          value={stats.conversion + "%"}
+          value={
+            analytics.revenueGrowth ? `${analytics.revenueGrowth}%` : "N/A"
+          }
           sub="Orders per customer"
           trend="+3%"
           trendUp
@@ -166,7 +145,7 @@ export default function AnalyticsPage() {
           >
             Order Status Breakdown
           </h3>
-          {orders.length === 0 ? (
+          {analytics.ordersByStatus.length === 0 ? (
             <p style={{ color: "#9ca3af", fontSize: "0.82rem" }}>
               No orders yet.
             </p>
@@ -174,51 +153,20 @@ export default function AnalyticsPage() {
             <div
               style={{ display: "flex", flexDirection: "column", gap: "10px" }}
             >
-              {statusBreakdown.map((item) => (
-                <div key={item.label}>
+              {analytics.ordersByStatus.map((item) => (
+                <div key={item.status}>
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
-                      marginBottom: "4px",
+                      marginBottom: 4,
                     }}
                   >
-                    <span
-                      style={{
-                        fontSize: "0.78rem",
-                        color: "#374151",
-                        fontWeight: "500",
-                      }}
-                    >
-                      {item.label}
+                    <span style={{ textTransform: "capitalize" }}>
+                      {item.status.toLowerCase()}
                     </span>
-                    <span
-                      style={{
-                        fontSize: "0.78rem",
-                        color: "#111827",
-                        fontWeight: "700",
-                      }}
-                    >
-                      {item.count} ({item.pct}%)
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      height: "7px",
-                      backgroundColor: "#f3f4f6",
-                      borderRadius: "99px",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "100%",
-                        width: item.pct + "%",
-                        backgroundColor: item.color,
-                        borderRadius: "99px",
-                        transition: "width 0.5s ease",
-                      }}
-                    />
+
+                    <span>{item._count.status}</span>
                   </div>
                 </div>
               ))}
@@ -244,84 +192,32 @@ export default function AnalyticsPage() {
               margin: "0 0 14px",
             }}
           >
-            Top Customers
+            Top Selling Products
           </h3>
-          {topCustomers.length === 0 ? (
+          {analytics.topProducts.length === 0 ? (
             <p style={{ color: "#9ca3af", fontSize: "0.82rem" }}>
-              No customers yet.
+              No products yet.
             </p>
           ) : (
             <div
               style={{ display: "flex", flexDirection: "column", gap: "10px" }}
             >
-              {topCustomers.map((u, i) => (
+              {analytics.topProducts.map((p, i) => (
                 <div
-                  key={u.id}
+                  key={p.productId}
                   style={{
                     display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    paddingBottom: i < 4 ? "10px" : 0,
-                    borderBottom: i < 4 ? "1px solid #f3f4f6" : "none",
+                    justifyContent: "space-between",
+                    padding: "10px 0",
+                    borderBottom: "1px solid #f3f4f6",
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: "0.72rem",
-                      fontWeight: "800",
-                      color: "#9ca3af",
-                      width: "16px",
-                      textAlign: "center",
-                      flexShrink: 0,
-                    }}
-                  >
-                    #{i + 1}
+                  <span style={{ fontWeight: "600" }}>
+                    #{i + 1} {p.title}
                   </span>
-                  <img
-                    src={u.avatar}
-                    alt={u.name}
-                    style={{
-                      width: "30px",
-                      height: "30px",
-                      borderRadius: "50%",
-                      border: "1.5px solid #e5e7eb",
-                      flexShrink: 0,
-                    }}
-                    onError={(e) => (e.currentTarget.style.display = "none")}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p
-                      style={{
-                        fontSize: "0.78rem",
-                        fontWeight: "600",
-                        color: "#111827",
-                        margin: "0 0 1px",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {u.name}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: "0.65rem",
-                        color: "#9ca3af",
-                        margin: 0,
-                      }}
-                    >
-                      {u.orderCount} order{u.orderCount !== 1 ? "s" : ""}
-                    </p>
-                  </div>
-                  <span
-                    style={{
-                      fontSize: "0.82rem",
-                      fontWeight: "800",
-                      color: "#4f7d52",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {formatPrice(u.spent)}
+
+                  <span style={{ color: "#4f7d52", fontWeight: "700" }}>
+                    {p._sum.quantity} sold
                   </span>
                 </div>
               ))}

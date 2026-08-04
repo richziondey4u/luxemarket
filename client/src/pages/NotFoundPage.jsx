@@ -2,13 +2,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Home, Search, ArrowRight, ShoppingBag, Tag, Zap } from 'lucide-react'
 
 const QUICK_LINKS = [
-  { label: 'Electronics',  to: '/category/smartphones',     icon: '📱' },
-  { label: 'Fashion',      to: '/category/tops',            icon: '👕' },
-  { label: 'Home & Decor', to: '/category/home-decoration', icon: '🏠' },
-  { label: 'Flash Sale',   to: '/flash-sale',               icon: '⚡' },
-  { label: 'New Arrivals', to: '/new-arrivals',             icon: '✨' },
-  { label: 'My Cart',      to: '/cart',                     icon: '🛒' },
-]
+  { label: "📱 Smartphones", to: "/category/smartphones", icon: "📱" },
+  { label: "💻 Laptops", to: "/category/laptops", icon: "💻" },
+  { label: "👕 Fashion", to: "/category/fashion", icon: "👕" },
+  { label: "👜 Bags", to: "/category/bags", icon: "👜" },
+  { label: "🏠 Home & Decor", to: "/category/home-decoration", icon: "🏠" },
+  { label: "⚡ Flash Sale", to: "/flash-sale", icon: "⚡" },
+];
 
 export default function NotFoundPage() {
   const navigate = useNavigate()

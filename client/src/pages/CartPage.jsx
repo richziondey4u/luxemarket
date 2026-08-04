@@ -31,7 +31,7 @@ export default function CartPage() {
           {/* Items */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {items.map(item => (
-              <div key={item.key} style={{
+              <div key={item.id} style={{
                 backgroundColor: '#fff', border: '1px solid #ebebeb', borderRadius: '12px',
                 padding: '14px', display: 'flex', gap: '12px', transition: 'border-color 0.2s',
               }}
@@ -45,12 +45,12 @@ export default function CartPage() {
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
                     <div style={{ minWidth: 0 }}>
-                      <p style={{ fontSize: '0.68rem', color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>{item.product.brand || item.product.category}</p>
+                      <p style={{ fontSize: '0.68rem', color: '#a0a0a0', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>{item.product.brand || item.product.category.name}</p>
                       <Link to={`/product/${item.id}`} style={{ textDecoration: 'none' }}>
                         <p style={{ fontSize: '0.85rem', fontWeight: '500', color: '#242424', lineHeight: '1.3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.product.title}</p>
                       </Link>
                     </div>
-                    <button onClick={() => removeItem(item.key)} style={{
+                    <button onClick={() => removeItem(item.product.id)} style={{
                       padding: '5px', color: '#c8c8c8', background: 'none', border: 'none',
                       cursor: 'pointer', borderRadius: '6px', flexShrink: 0, display: 'flex',
                       transition: 'color 0.15s, background-color 0.15s',
@@ -61,12 +61,12 @@ export default function CartPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', border: '1.5px solid #e0e0e0', borderRadius: '7px', overflow: 'hidden' }}>
-                      <button onClick={() => updateQuantity(item.key, item.quantity - 1)} style={{ padding: '5px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#555', display: 'flex' }}
+                      <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} style={{ padding: '5px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#555', display: 'flex' }}
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f3f3'}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                       ><Minus style={{ width: '13px', height: '13px' }} /></button>
                       <span style={{ padding: '0 12px', fontWeight: '600', color: '#141414', fontSize: '0.85rem' }}>{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.key, item.quantity + 1)} style={{ padding: '5px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#555', display: 'flex' }}
+                      <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} style={{ padding: '5px 10px', background: 'none', border: 'none', cursor: 'pointer', color: '#555', display: 'flex' }}
                         onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f3f3'}
                         onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
                       ><Plus style={{ width: '13px', height: '13px' }} /></button>

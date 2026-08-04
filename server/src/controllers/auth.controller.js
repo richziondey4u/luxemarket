@@ -1,69 +1,36 @@
 import argon2 from "argon2";
-import jwt from "jsonwebtoken";
 import { prisma } from "../lib/prisma.js";
+import { signToken } from "../lib/jwt.js";
 import { config } from "../config/config.js";
 
-/* ── Token helpers ── */
-const signAccess = (userId, role) =>
-  jwt.sign({ userId, role }, config.jwt.secret, {
-    expiresIn: config.jwt.expiresIn,
-  });
-
-const signRefresh = (userId) =>
-  jwt.sign({ userId }, config.jwt.refreshSecret, {
-    expiresIn: config.jwt.refreshExpiresIn,
-  });
-
-const setCookies = (res, access, refresh) => {
-  const base = { httpOnly: true, sameSite: "lax", path: "/" };
-  const secure = config.nodeEnv === "production";
-  res.cookie("accessToken", access, {
-    ...base,
-    secure,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
-  res.cookie("refreshToken", refresh, {
-    ...base,
-    secure,
+const setCookie = (res, token) => {
+  res.cookie("token", token, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: config.nodeEnv === "production",
     maxAge: 30 * 24 * 60 * 60 * 1000,
+    path: "/",
   });
 };
 
-const saveRefresh = (userId, token) =>
-  prisma.refreshToken.create({
-    data: {
-      token,
-      userId,
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    },
-  });
-
-/* ── Register customer ── */
 export const register = async (req, res, next) => {
   try {
     const { name, email, password, phone } = req.body;
-
     if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Name, email and password are required.",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Name, email, password required." });
     }
 
     const exists = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
-    if (exists) {
+    if (exists)
       return res
         .status(409)
         .json({ success: false, message: "Email already registered." });
-    }
 
-    const hashed = await argon2.hash(password, {
-      type: argon2.argon2id,
-      memoryCost: 65536,
-      timeCost: 3,
-    });
+    const hashed = await argon2.hash(password, { type: argon2.argon2id });
 
     const user = await prisma.user.create({
       data: {
@@ -85,77 +52,67 @@ export const register = async (req, res, next) => {
       },
     });
 
-    const access = signAccess(user.id, user.role);
-    const refresh = signRefresh(user.id);
-    await saveRefresh(user.id, refresh);
-    setCookies(res, access, refresh);
+    const token = signToken(user.id, user.role);
+    setCookie(res, token);
 
-    res.status(201).json({
-      success: true,
-      message: `Welcome to LuxeMarket, ${user.name}! 🎉`,
-      data: { user, accessToken: access },
-    });
+    res
+      .status(201)
+      .json({
+        success: true,
+        message: `Welcome, ${user.name}!`,
+        data: { user, token },
+      });
   } catch (err) {
     next(err);
   }
 };
 
-/* ── Login customer ── */
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password) {
       return res
         .status(400)
-        .json({ success: false, message: "Email and password are required." });
+        .json({ success: false, message: "Email and password required." });
     }
 
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
-    if (!user) {
+    if (!user)
       return res
         .status(401)
         .json({ success: false, message: "Invalid email or password." });
-    }
-    if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        message: "Account has been deactivated. Contact support.",
-      });
-    }
-    if (["ADMIN", "MANAGER", "VIEWER"].includes(user.role)) {
-      return res.status(401).json({
-        success: false,
-        message: "Please use the admin portal to sign in.",
-      });
+    if (!user.isActive)
+      return res
+        .status(401)
+        .json({ success: false, message: "Account deactivated." });
+    if (user.role !== "USER") {
+      return res
+        .status(401)
+        .json({ success: false, message: "Use admin login for this account." });
     }
 
     const valid = await argon2.verify(user.password, password);
-    if (!valid) {
+    if (!valid)
       return res
         .status(401)
         .json({ success: false, message: "Invalid email or password." });
-    }
 
-    const access = signAccess(user.id, user.role);
-    const refresh = signRefresh(user.id);
-    await saveRefresh(user.id, refresh);
-    setCookies(res, access, refresh);
+    const token = signToken(user.id, user.role);
+    setCookie(res, token);
 
     const { password: _, ...safe } = user;
     res.json({
       success: true,
-      message: `Welcome back, ${user.name}! 👋`,
-      data: { user: safe, accessToken: access },
+      message: `Welcome back, ${user.name}!`,
+      data: { user: safe, token },
     });
   } catch (err) {
     next(err);
   }
 };
 
-/* ── Admin Register — saves to DB with invite code ── */
 export const adminRegister = async (req, res, next) => {
   try {
     const { name, email, password, role, inviteCode } = req.body;
@@ -168,35 +125,26 @@ export const adminRegister = async (req, res, next) => {
         .status(403)
         .json({ success: false, message: "Invalid authorization code." });
     }
-
     if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Name, email and password are required.",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "Name, email, password required." });
     }
 
     const exists = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
-    if (exists) {
+    if (exists)
       return res
         .status(409)
         .json({ success: false, message: "Email already registered." });
-    }
 
-    const hashed = await argon2.hash(password, {
-      type: argon2.argon2id,
-      memoryCost: 65536,
-      timeCost: 3,
-    });
-
+    const hashed = await argon2.hash(password, { type: argon2.argon2id });
     const validRoles = ["ADMIN", "MANAGER", "VIEWER"];
     const assignRole = validRoles.includes(role?.toUpperCase())
       ? role.toUpperCase()
       : "ADMIN";
 
-    // ── Saved to PostgreSQL database ──
     const user = await prisma.user.create({
       data: {
         name: name.trim(),
@@ -215,143 +163,68 @@ export const adminRegister = async (req, res, next) => {
       },
     });
 
-    const access = signAccess(user.id, user.role);
-    const refresh = signRefresh(user.id);
-    await saveRefresh(user.id, refresh);
-    setCookies(res, access, refresh);
+    const token = signToken(user.id, user.role);
+    setCookie(res, token);
 
-    console.log(
-      `✅ Admin registered: ${user.email} (${user.role}) — ID: ${user.id}`,
-    );
-
-    res.status(201).json({
-      success: true,
-      message: `Admin account created! Welcome, ${user.name}.`,
-      data: { user, accessToken: access },
-    });
+    res
+      .status(201)
+      .json({
+        success: true,
+        message: `Admin account created!`,
+        data: { user, token },
+      });
   } catch (err) {
     next(err);
   }
 };
 
-/* ── Admin Login — checks DB ── */
 export const adminLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
-
     if (!email || !password) {
       return res
         .status(400)
-        .json({ success: false, message: "Email and password are required." });
+        .json({ success: false, message: "Email and password required." });
     }
 
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
     });
-
     if (!user || !["ADMIN", "MANAGER", "VIEWER"].includes(user.role)) {
-      return res.status(401).json({
-        success: false,
-        message: "No admin account found with this email.",
-      });
+      return res
+        .status(401)
+        .json({ success: false, message: "No admin account found." });
     }
-    if (!user.isActive) {
+    if (!user.isActive)
       return res
         .status(401)
         .json({ success: false, message: "Account deactivated." });
-    }
 
     const valid = await argon2.verify(user.password, password);
-    if (!valid) {
+    if (!valid)
       return res
         .status(401)
         .json({ success: false, message: "Invalid email or password." });
-    }
 
-    const access = signAccess(user.id, user.role);
-    const refresh = signRefresh(user.id);
-    await saveRefresh(user.id, refresh);
-    setCookies(res, access, refresh);
+    const token = signToken(user.id, user.role);
+    setCookie(res, token);
 
     const { password: _, ...safe } = user;
-    console.log(`✅ Admin login: ${user.email} (${user.role})`);
-
     res.json({
       success: true,
-      message: `Welcome back, ${user.name}!`,
-      data: { user: safe, accessToken: access },
+      message: `Welcome, ${user.name}!`,
+      data: { user: safe, token },
     });
   } catch (err) {
     next(err);
   }
 };
 
-/* ── Refresh token ── */
-export const refreshToken = async (req, res, next) => {
-  try {
-    const token = req.cookies?.refreshToken || req.body?.refreshToken;
-    if (!token)
-      return res
-        .status(401)
-        .json({ success: false, message: "No refresh token." });
-
-    let decoded;
-    try {
-      decoded = jwt.verify(token, config.jwt.refreshSecret);
-    } catch {
-      return res
-        .status(401)
-        .json({ success: false, message: "Invalid or expired refresh token." });
-    }
-
-    const stored = await prisma.refreshToken.findUnique({ where: { token } });
-    if (!stored || stored.expiresAt < new Date()) {
-      return res.status(401).json({
-        success: false,
-        message: "Refresh token expired. Please log in again.",
-      });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-      select: { id: true, role: true, isActive: true },
-    });
-    if (!user || !user.isActive) {
-      return res
-        .status(401)
-        .json({ success: false, message: "User not found." });
-    }
-
-    // Rotate
-    await prisma.refreshToken.delete({ where: { token } });
-    const newAccess = signAccess(user.id, user.role);
-    const newRefresh = signRefresh(user.id);
-    await saveRefresh(user.id, newRefresh);
-    setCookies(res, newAccess, newRefresh);
-
-    res.json({ success: true, data: { accessToken: newAccess } });
-  } catch (err) {
-    next(err);
-  }
+export const logout = async (req, res) => {
+  res.clearCookie("token", { path: "/" });
+  res.json({ success: true, message: "Logged out." });
 };
 
-/* ── Logout ── */
-export const logout = async (req, res, next) => {
-  try {
-    const token = req.cookies?.refreshToken;
-    if (token)
-      await prisma.refreshToken
-        .deleteMany({ where: { token } })
-        .catch(() => {});
-    res.clearCookie("accessToken", { path: "/" });
-    res.clearCookie("refreshToken", { path: "/" });
-    res.json({ success: true, message: "Logged out successfully." });
-  } catch (err) {
-    next(err);
-  }
-};
-
-/* ── Get current user ── */
 export const getMe = async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({

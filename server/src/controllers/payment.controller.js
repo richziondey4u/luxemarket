@@ -46,12 +46,10 @@ export const initializePayment = async (req, res, next) => {
 
     const data = await response.json();
     if (!data.status) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: data.message || "Payment initialization failed.",
-        });
+      return res.status(400).json({
+        success: false,
+        message: data.message || "Payment initialization failed.",
+      });
     }
 
     // Save pending payment
@@ -120,6 +118,87 @@ export const verifyPayment = async (req, res, next) => {
     });
 
     res.json({ success: true, message: "Payment verified!", data: { order } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const demoPayment = async (req, res, next) => {
+  try {
+    const { orderId } = req.body;
+
+    const order = await prisma.order.findFirst({
+      where: {
+        id: orderId,
+        userId: req.user.id,
+      },
+      include: {
+        payment: true,
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: "Order not found.",
+      });
+    }
+
+    if (order.status === "PAID") {
+      return res.status(400).json({
+        success: false,
+        message: "Order already paid.",
+      });
+    }
+
+await prisma.$transaction(async (tx) => {
+  await tx.payment.upsert({
+    where: {
+      orderId: order.id,
+    },
+    update: {
+      status: "SUCCESS",
+      gateway: "demo",
+      reference: `DEMO-${Date.now()}`,
+    },
+    create: {
+      orderId: order.id,
+      amount: order.total,
+      status: "SUCCESS",
+      gateway: "demo",
+      reference: `DEMO-${Date.now()}`,
+    },
+  });
+
+  await tx.order.update({
+    where: {
+      id: order.id,
+    },
+    data: {
+      status: "PAID",
+    },
+  });
+});
+
+// Fetch the updated order
+const updatedOrder = await prisma.order.findUnique({
+  where: {
+    id: order.id,
+  },
+  include: {
+    items: true,
+    payment: true,
+  },
+});
+
+res.json({
+  success: true,
+  message: "Demo payment successful.",
+  data: {
+    order: updatedOrder,
+  },
+});
+
   } catch (err) {
     next(err);
   }

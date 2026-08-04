@@ -4,6 +4,11 @@ import { authenticate } from "../middleware/auth.js";
 
 const router = Router();
 
+// Public route - must be defined BEFORE router.use(authenticate),
+// since guests without an account need to track orders by order number.
+router.get("/track/:orderNumber", ctrl.trackOrder);
+
+// Everything below this line requires a logged-in user
 router.use(authenticate);
 
 router.post("/", ctrl.createOrder);

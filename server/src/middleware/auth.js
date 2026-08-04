@@ -10,8 +10,8 @@ export const authenticate = async (req, res, next) => {
 
     if (authHeader && authHeader.startsWith("Bearer ")) {
       token = authHeader.split(" ")[1];
-    } else if (req.cookies?.accessToken) {
-      token = req.cookies.accessToken;
+    } else if (req.cookies?.token) {
+      token = req.cookies.token;
     }
 
     if (!token) {
@@ -46,13 +46,11 @@ export const authenticate = async (req, res, next) => {
     next();
   } catch (err) {
     if (err.name === "TokenExpiredError") {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          message: "Token expired.",
-          code: "TOKEN_EXPIRED",
-        });
+      return res.status(401).json({
+        success: false,
+        message: "Token expired.",
+        code: "TOKEN_EXPIRED",
+      });
     }
     return res.status(401).json({ success: false, message: "Invalid token." });
   }

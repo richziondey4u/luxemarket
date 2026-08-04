@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronRight,
@@ -21,9 +21,10 @@ import {
   useBestSellers,
   useProductsByCategory,
 } from "../hooks/useProducts.js";
+import { discountedPrice, formatPrice } from "../api/products";
 import { useCart } from "../context/CartContext.jsx";
 import { useWishlist } from "../context/WishlistContext.jsx";
-import { CATEGORIES, formatPrice, discountedPrice } from "../api/products.js";
+import { useCategories } from "../hooks/useProducts.js";
 import { truncate } from "../lib/utils.js";
 
 /* ── Countdown hook ── */
@@ -89,7 +90,7 @@ function MiniCard({ product }) {
       >
         <Link to={`/product/${product.id}`}>
           <img
-            src={product.thumbnail}
+            src={product.images?.[0] || product.thumbnail}
             alt={product.title}
             style={{
               width: "100%",
@@ -198,7 +199,7 @@ function MiniCard({ product }) {
               marginLeft: "1px",
             }}
           >
-            ({product.reviews?.length || 0})
+            ({product.reviewCount})
           </span>
         </div>
 
@@ -221,7 +222,8 @@ function MiniCard({ product }) {
                   fontFamily: "DM Sans, sans-serif",
                 }}
               >
-                {formatPrice(final)}
+                {/* {formatPrice(final)} */}
+                {formatPrice(product.price)}
               </p>
               {product.discountPercentage > 0.5 && (
                 <p
@@ -232,7 +234,7 @@ function MiniCard({ product }) {
                     margin: 0,
                   }}
                 >
-                  {formatPrice(product.price)}
+                  {/* {formatPrice(product.price)} */}
                 </p>
               )}
             </div>
@@ -407,9 +409,6 @@ function ProductRow({ products, isLoading }) {
     </div>
   ) : null;
 }
-
-/* ── The main import ── */
-import { useRef } from "react";
 
 /* ── Banner carousel ── */
 const BANNERS = [
@@ -603,16 +602,39 @@ function BannerCarousel() {
 
 export default function HomePage() {
   const { h, m, s } = useCountdown(12);
+  const { data: categories = [] } = useCategories();
   const { data: featured, isLoading: fl } = useFeaturedProducts(20);
   const { data: newArrivals, isLoading: nl } = useNewArrivals();
   const { data: bestSellers, isLoading: bl } = useBestSellers();
-  const { data: electronics, isLoading: el } = useProductsByCategory(
-    "smartphones",
+  const { data: smartphones, isLoading: smartphonesLoading } =
+    useProductsByCategory("smartphones", 4);
+
+  const { data: laptops, isLoading: laptopsLoading } = useProductsByCategory(
+    "laptops",
+    3,
+  );
+
+  const { data: tablets, isLoading: tabletsLoading } = useProductsByCategory(
+    "tablets",
+    3,
+  );
+
+  const electronics = {
+    products: [
+      ...(smartphones?.products || []),
+      ...(laptops?.products || []),
+      ...(tablets?.products || []),
+    ],
+  };
+
+  const el = smartphonesLoading || laptopsLoading || tabletsLoading;
+  const { data: fashion, isLoading: fal } = useProductsByCategory(
+    "fashion",
     10,
   );
-  const { data: fashion, isLoading: fal } = useProductsByCategory("tops", 10);
+
   const { data: skincare, isLoading: sl } = useProductsByCategory(
-    "skincare",
+    "fragrances",
     10,
   );
 
@@ -678,7 +700,7 @@ export default function HomePage() {
             }}
           >
             <style>{`.cat-scroll::-webkit-scrollbar{display:none}`}</style>
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <Link
                 key={cat.slug}
                 to={`/category/${cat.slug}`}
@@ -725,7 +747,7 @@ export default function HomePage() {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {cat.label}
+                  {cat.name}
                 </span>
               </Link>
             ))}
@@ -1072,14 +1094,14 @@ export default function HomePage() {
               emoji: "📱",
               title: "Electronics",
               sub: "Up to 50% off",
-              to: "/category/smartphones",
+              to: "/category/electronics",
             },
             {
               bg: "linear-gradient(135deg, #4c1d95, #6d28d9)",
               emoji: "👗",
               title: "Fashion Week",
               sub: "New styles daily",
-              to: "/category/tops",
+              to: "/category/fashion",
             },
             {
               bg: "linear-gradient(135deg, #7c2d12, #c2410c)",
@@ -1401,14 +1423,15 @@ export default function HomePage() {
         >
           <SectionHeader
             title="👕 Fashion"
-            subtitle="Tops, Shirts, Shoes & More"
-            to="/category/tops"
+            subtitle="Latest Fashion Products"
+            to="/category/fashion"
           />
+
           <div
             style={{
               display: "grid",
               gridTemplateColumns:
-                "repeat(auto-fill, minmax(min(100%, 150px), 1fr))",
+                "repeat(auto-fill, minmax(min(100%,150px),1fr))",
               gap: "1px",
               backgroundColor: "var(--border-light)",
             }}
@@ -1423,67 +1446,71 @@ export default function HomePage() {
                     }}
                   >
                     <div
+                      className="shimmer-bg"
                       style={{
                         aspectRatio: "1",
-                        marginBottom: "8px",
                         borderRadius: "4px",
+                        marginBottom: "8px",
                       }}
-                      className="shimmer-bg"
                     />
                     <div
+                      className="shimmer-bg"
                       style={{
                         height: "10px",
                         width: "80%",
-                        marginBottom: "5px",
-                        borderRadius: "3px",
+                        marginBottom: "6px",
                       }}
-                      className="shimmer-bg"
                     />
                     <div
+                      className="shimmer-bg"
                       style={{
                         height: "14px",
                         width: "50%",
-                        borderRadius: "3px",
                       }}
-                      className="shimmer-bg"
                     />
                   </div>
                 ))
-              : fashion?.products?.map((p) => (
+              : fashion?.products?.map((product) => (
                   <div
-                    key={p.id}
+                    key={product.id}
                     style={{
                       backgroundColor: "var(--bg-card)",
                       padding: "8px",
                     }}
                   >
-                    <MiniCard product={p} />
+                    <MiniCard product={product} />
                   </div>
                 ))}
           </div>
+
           <div
             style={{
               padding: "12px",
+              textAlign: "center",
               backgroundColor: "var(--bg-section)",
               borderTop: "1px solid var(--border-light)",
-              textAlign: "center",
             }}
           >
             <Link
-              to="/category/tops"
+              to="/category/fashion"
               className="btn-outline"
               style={{
                 borderRadius: "4px",
-                fontSize: "0.78rem",
+                fontSize: ".8rem",
                 padding: "7px 24px",
               }}
             >
-              View All Fashion{" "}
-              <ChevronRight style={{ width: "13px", height: "13px" }} />
+              View All Fashion
+              <ChevronRight
+                style={{
+                  width: "13px",
+                  height: "13px",
+                  marginLeft: "5px",
+                }}
+              />
             </Link>
           </div>
         </div>
-
         {/* ═══════════════════════════════════════
             SKINCARE SECTION
         ═══════════════════════════════════════ */}
@@ -1499,7 +1526,7 @@ export default function HomePage() {
           <SectionHeader
             title="✨ Beauty & Skincare"
             subtitle="Glow up your routine"
-            to="/category/skincare"
+            to="/category/fragrances"
           />
           <div
             style={{

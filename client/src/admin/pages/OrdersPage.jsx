@@ -1,18 +1,10 @@
-import { useState, useMemo } from "react";
-import { Search, Download, RefreshCw, Trash2, Filter } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Search, Download, RefreshCw, Trash2 } from "lucide-react";
 import StatusBadge from "../components/StatusBadge.jsx";
 import { formatPrice } from "../../api/products.js";
+import { apiClient } from "../../lib/api.js";
 import { formatDate } from "../../lib/utils.js";
 import toast from "react-hot-toast";
-
-const getOrders = () => {
-  try {
-    return JSON.parse(localStorage.getItem("lm_orders") || "[]");
-  } catch {
-    return [];
-  }
-};
-const saveOrders = (o) => localStorage.setItem("lm_orders", JSON.stringify(o));
 
 const STATUS_LIST = [
   "all",
@@ -24,49 +16,85 @@ const STATUS_LIST = [
 ];
 
 export default function OrdersPage() {
-  const [orders, setOrders] = useState(getOrders);
+  const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [deleteModal, setDeleteModal] = useState({
+    open: false,
+    orderId: null,
+  });
 
-  const refresh = () => setOrders(getOrders());
-
-  const filtered = useMemo(
-    () =>
-      orders
-        .filter((o) => {
-          const q = search.toLowerCase();
-          const ok =
-            !q ||
-            o.id?.toLowerCase().includes(q) ||
-            `${o.shippingAddress?.firstName} ${o.shippingAddress?.lastName}`
-              .toLowerCase()
-              .includes(q) ||
-            o.shippingAddress?.email?.toLowerCase().includes(q);
-          return ok && (statusFilter === "all" || o.status === statusFilter);
-        })
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-    [orders, search, statusFilter],
-  );
-
-  const updateStatus = (id, status) => {
-    const next = orders.map((o) => (o.id === id ? { ...o, status } : o));
-    saveOrders(next);
-    setOrders(next);
-    toast.success(`Order updated to "${status}"`);
+  const closeDeleteModal = () => {
+    setDeleteModal({ open: false, orderId: null });
   };
 
-  const deleteOrder = (id) => {
-    if (!confirm(`Delete ${id}?`)) return;
-    const next = orders.filter((o) => o.id !== id);
-    saveOrders(next);
-    setOrders(next);
-    toast.success("Order deleted");
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const loadOrders = async () => {
+    try {
+      const res = await apiClient.getAdminOrders();
+      setOrders(res.data.orders || []);
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const refresh = () => {
+    loadOrders();
+  };
+
+  const filtered = useMemo(() => {
+    return orders
+      .filter((o) => {
+        const q = search.toLowerCase();
+
+        const customer =
+          `${o.firstName || ""} ${o.lastName || ""}`.toLowerCase();
+
+        const matchesSearch =
+          !q ||
+          (o.orderNumber || "").toLowerCase().includes(q) ||
+          customer.includes(q) ||
+          (o.email || "").toLowerCase().includes(q);
+
+        const matchesStatus =
+          statusFilter === "all" ||
+          (o.status || "").toLowerCase() === statusFilter;
+
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [orders, search, statusFilter]);
+
+  // NOTE: always use order.id (the internal UUID) for update/delete calls -
+  // that's what the backend routes (PUT/DELETE /admin/orders/:id) expect.
+  const updateStatus = async (id, status) => {
+    try {
+      await apiClient.updateOrderStatus(id, status);
+      toast.success("Order updated");
+      loadOrders();
+    } catch (err) {
+      toast.error(err.message);
+    }
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await apiClient.deleteOrder(deleteModal.orderId);
+      await loadOrders();
+      toast.success("Order deleted");
+      setDeleteModal({ open: false, orderId: null });
+    } catch (err) {
+      toast.error(err.message);
+    }
   };
 
   const exportCSV = () => {
     const rows = [
       [
-        "ID",
+        "Order Number",
         "Customer",
         "Email",
         "Phone",
@@ -77,12 +105,12 @@ export default function OrdersPage() {
         "Date",
       ],
       ...orders.map((o) => [
-        o.id,
-        `${o.shippingAddress?.firstName || ""} ${o.shippingAddress?.lastName || ""}`.trim(),
-        o.shippingAddress?.email || "",
-        o.shippingAddress?.phone || "",
-        o.shippingAddress?.city || "",
-        o.shippingAddress?.state || "",
+        o.orderNumber,
+        `${o.firstName || ""} ${o.lastName || ""}`.trim(),
+        o.email || "",
+        o.phone || "",
+        o.city || "",
+        o.state || "",
         o.status,
         formatPrice(o.total),
         formatDate(o.createdAt),
@@ -192,7 +220,7 @@ export default function OrdersPage() {
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search order ID, customer name..."
+            placeholder="Search order number, customer name..."
             style={{
               width: "100%",
               backgroundColor: "#fff",
@@ -266,7 +294,7 @@ export default function OrdersPage() {
               <thead>
                 <tr style={{ backgroundColor: "#f9fafb" }}>
                   {[
-                    "Order ID",
+                    "Order Number",
                     "Customer",
                     "Items",
                     "Status",
@@ -305,6 +333,7 @@ export default function OrdersPage() {
                       (e.currentTarget.style.backgroundColor = "transparent")
                     }
                   >
+                    {/* Public-facing order number - what customers see/search by */}
                     <td
                       style={{
                         padding: "10px 14px",
@@ -314,7 +343,7 @@ export default function OrdersPage() {
                         fontSize: "0.72rem",
                       }}
                     >
-                      {order.id}
+                      {order.orderNumber}
                     </td>
                     <td style={{ padding: "10px 14px" }}>
                       <p
@@ -325,8 +354,7 @@ export default function OrdersPage() {
                           margin: "0 0 1px",
                         }}
                       >
-                        {order.shippingAddress?.firstName}{" "}
-                        {order.shippingAddress?.lastName}
+                        {order.firstName} {order.lastName}
                       </p>
                       <p
                         style={{
@@ -335,8 +363,7 @@ export default function OrdersPage() {
                           margin: 0,
                         }}
                       >
-                        {order.shippingAddress?.city},{" "}
-                        {order.shippingAddress?.state}
+                        {order.city}, {order.state}
                       </p>
                     </td>
                     <td
@@ -349,6 +376,7 @@ export default function OrdersPage() {
                       {order.items?.length || 0} item(s)
                     </td>
                     <td style={{ padding: "10px 14px" }}>
+                      {/* Internal UUID used for the actual update call */}
                       <select
                         value={order.status}
                         onChange={(e) => updateStatus(order.id, e.target.value)}
@@ -400,8 +428,11 @@ export default function OrdersPage() {
                       {formatDate(order.createdAt)}
                     </td>
                     <td style={{ padding: "10px 14px" }}>
+                      {/* Internal UUID used for the actual delete call */}
                       <button
-                        onClick={() => deleteOrder(order.id)}
+                        onClick={() =>
+                          setDeleteModal({ open: true, orderId: order.id })
+                        }
                         style={{
                           padding: "5px 8px",
                           backgroundColor: "#fef2f2",
@@ -427,6 +458,89 @@ export default function OrdersPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        {deleteModal.open && (
+          <div
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 9999,
+            }}
+          >
+            <div
+              style={{
+                width: "420px",
+                background: "#fff",
+                borderRadius: "12px",
+                padding: "24px",
+                boxShadow: "0 20px 40px rgba(0,0,0,.15)",
+              }}
+            >
+              <h3
+                style={{
+                  margin: 0,
+                  fontSize: "20px",
+                  fontWeight: 700,
+                  color: "#111827",
+                }}
+              >
+                Delete Order
+              </h3>
+
+              <p
+                style={{
+                  marginTop: "12px",
+                  color: "#6b7280",
+                  lineHeight: 1.6,
+                }}
+              >
+                Are you sure you want to delete this order?
+                <br />
+                This action cannot be undone.
+              </p>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: "12px",
+                  marginTop: "24px",
+                }}
+              >
+                <button
+                  onClick={closeDeleteModal}
+                  style={{
+                    padding: "10px 18px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    background: "#fff",
+                    cursor: "pointer",
+                  }}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  onClick={confirmDelete}
+                  style={{
+                    padding: "10px 18px",
+                    border: "none",
+                    borderRadius: "8px",
+                    background: "#dc2626",
+                    color: "#fff",
+                    cursor: "pointer",
+                    fontWeight: 600,
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

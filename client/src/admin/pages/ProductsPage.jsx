@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   Plus,
   Search,
@@ -10,14 +10,11 @@ import {
   Package,
   RefreshCw,
 } from "lucide-react";
-import {
-  CATEGORIES,
-  formatPrice,
-  discountedPrice,
-} from "../../api/products.js";
 import { truncate } from "../../lib/utils.js";
 import { useAdminAuth } from "../context/AdminAuthContext.jsx";
 import toast from "react-hot-toast";
+import { useCategories } from "../../hooks/useProducts.js";
+import { api, formatPrice, discountedPrice } from "../../api/products";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
@@ -32,15 +29,16 @@ async function apiFetch(path, opts = {}) {
   if (!res.ok) throw new Error(data.message || "Request failed");
   return data;
 }
-
 const EMPTY = {
   title: "",
   description: "",
   price: "",
   discountPercentage: 0,
   stock: 10,
+  rating: 0,
+  reviewCount: 0,
   brand: "",
-  category: "smartphones",
+  category: "",
   thumbnail: "",
   tags: "",
   isFeatured: false,
@@ -48,6 +46,7 @@ const EMPTY = {
 
 /* ── Product Modal ── */
 function ProductModal({ product, onClose, onSave }) {
+  const { data: categories = [] } = useCategories();
   const [form, setForm] = useState(
     product
       ? {
@@ -109,6 +108,11 @@ function ProductModal({ product, onClose, onSave }) {
         price: Number(form.price),
         discountPercentage: Number(form.discountPercentage) || 0,
         stock: Number(form.stock) || 0,
+
+        // Add these two
+        rating: Number(form.rating) || 0,
+        reviewCount: Number(form.reviewCount) || 0,
+
         brand: form.brand || "",
         thumbnail: form.thumbnail || "",
         tags: form.tags
@@ -118,6 +122,7 @@ function ProductModal({ product, onClose, onSave }) {
               .filter(Boolean)
           : [],
         isFeatured: Boolean(form.isFeatured),
+        categoryId: form.categoryId,
         images: form.thumbnail ? [form.thumbnail] : [],
       };
 
@@ -305,39 +310,49 @@ function ProductModal({ product, onClose, onSave }) {
             }}
           >
             <div>
-              <label style={lbl}>Price (USD) *</label>
+              <label style={lbl}>Price (₦) *</label>
               <input
-                type="number"
-                min="0.01"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
                 value={form.price}
-                onChange={set("price")}
-                required
-                placeholder="29.99"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  // Only allow digits and one decimal point
+                  if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                    setForm((v) => ({ ...v, price: val }));
+                  }
+                }}
+                placeholder="250000"
                 style={inp}
                 onFocus={foc}
                 onBlur={blr}
               />
-              {form.price && !isNaN(+form.price) && (
-                <p
-                  style={{
-                    fontSize: "0.68rem",
-                    color: "#4f7d52",
-                    marginTop: "3px",
-                  }}
-                >
-                  ≈ {formatPrice(+form.price)}
-                </p>
-              )}
+              {form.price &&
+                !isNaN(Number(form.price)) &&
+                Number(form.price) > 0 && (
+                  <p
+                    style={{
+                      fontSize: "0.68rem",
+                      color: "#4f7d52",
+                      marginTop: "3px",
+                    }}
+                  >
+                    ≈ {formatPrice(Number(form.price))}
+                  </p>
+                )}
             </div>
             <div>
               <label style={lbl}>Discount %</label>
               <input
-                type="number"
-                min="0"
-                max="100"
+                type="text"
+                inputMode="decimal"
                 value={form.discountPercentage}
-                onChange={set("discountPercentage")}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "" || /^\d*\.?\d*$/.test(val)) {
+                    setForm((v) => ({ ...v, discountPercentage: val }));
+                  }
+                }}
                 placeholder="0"
                 style={inp}
                 onFocus={foc}
@@ -347,11 +362,54 @@ function ProductModal({ product, onClose, onSave }) {
             <div>
               <label style={lbl}>Stock Qty</label>
               <input
+                type="text"
+                inputMode="numeric"
+                value={form.stock}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "" || /^\d*$/.test(val)) {
+                    setForm((v) => ({ ...v, stock: val }));
+                  }
+                }}
+                placeholder="10"
+                style={inp}
+                onFocus={foc}
+                onBlur={blr}
+              />
+            </div>
+            <div>
+              <label style={lbl}>Rating (0 - 5)</label>
+              <input
                 type="number"
                 min="0"
-                value={form.stock}
-                onChange={set("stock")}
-                placeholder="10"
+                max="5"
+                step="0.1"
+                value={form.rating}
+                onChange={(e) =>
+                  setForm((v) => ({
+                    ...v,
+                    rating: e.target.value,
+                  }))
+                }
+                placeholder="4.5"
+                style={inp}
+                onFocus={foc}
+                onBlur={blr}
+              />
+            </div>
+            <div>
+              <label style={lbl}>Reviews</label>
+              <input
+                type="number"
+                min="0"
+                value={form.reviewCount}
+                onChange={(e) =>
+                  setForm((v) => ({
+                    ...v,
+                    reviewCount: e.target.value,
+                  }))
+                }
+                placeholder="125"
                 style={inp}
                 onFocus={foc}
                 onBlur={blr}
@@ -382,15 +440,17 @@ function ProductModal({ product, onClose, onSave }) {
             <div>
               <label style={lbl}>Category *</label>
               <select
-                value={form.category}
-                onChange={set("category")}
+                value={form.categoryId || ""}
+                onChange={set("categoryId")}
+                required
                 style={{ ...inp, cursor: "pointer" }}
                 onFocus={foc}
                 onBlur={blr}
               >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.slug} value={cat.slug}>
-                    {cat.icon} {cat.label}
+                <option value="">Select a category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.icon} {cat.name}
                   </option>
                 ))}
               </select>
@@ -621,91 +681,94 @@ function ProductModal({ product, onClose, onSave }) {
           </div>
 
           {/* Preview */}
-          {form.title && form.price && (
-            <div
-              style={{
-                backgroundColor: "#f0fdf4",
-                border: "1px solid #a3c4a5",
-                borderRadius: "10px",
-                padding: "12px",
-              }}
-            >
-              <p
+          {form.title &&
+            form.price &&
+            !isNaN(Number(form.price)) &&
+            Number(form.price) > 0 && (
+              <div
                 style={{
-                  fontSize: "0.68rem",
-                  fontWeight: "700",
-                  color: "#4f7d52",
-                  marginBottom: "8px",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.06em",
+                  backgroundColor: "#f0fdf4",
+                  border: "1px solid #a3c4a5",
+                  borderRadius: "10px",
+                  padding: "12px",
                 }}
               >
-                Preview
-              </p>
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "12px" }}
-              >
-                {form.thumbnail && (
-                  <img
-                    src={form.thumbnail}
-                    alt=""
-                    style={{
-                      width: "52px",
-                      height: "52px",
-                      borderRadius: "8px",
-                      objectFit: "cover",
-                      border: "1px solid #a3c4a5",
-                      flexShrink: 0,
-                    }}
-                    onError={(e) => (e.currentTarget.style.display = "none")}
-                  />
-                )}
-                <div>
-                  <p
-                    style={{
-                      fontSize: "0.85rem",
-                      fontWeight: "600",
-                      color: "#111827",
-                      margin: "0 0 2px",
-                    }}
-                  >
-                    {truncate(form.title, 40)}
-                  </p>
-                  <p
-                    style={{
-                      fontSize: "0.8rem",
-                      color: "#4f7d52",
-                      fontWeight: "800",
-                      margin: 0,
-                    }}
-                  >
-                    {formatPrice(
-                      discountedPrice(
-                        +form.price || 0,
-                        +form.discountPercentage || 0,
-                      ),
-                    )}
-                  </p>
-                  {form.isFeatured && (
-                    <span
+                <p
+                  style={{
+                    fontSize: "0.68rem",
+                    fontWeight: "700",
+                    color: "#4f7d52",
+                    marginBottom: "8px",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                  }}
+                >
+                  Preview
+                </p>
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "12px" }}
+                >
+                  {form.thumbnail && (
+                    <img
+                      src={form.thumbnail}
+                      alt=""
                       style={{
-                        fontSize: "0.62rem",
-                        backgroundColor: "#fef3c7",
-                        color: "#d97706",
-                        padding: "1px 6px",
-                        borderRadius: "3px",
-                        fontWeight: "700",
-                        marginTop: "3px",
-                        display: "inline-block",
+                        width: "52px",
+                        height: "52px",
+                        borderRadius: "8px",
+                        objectFit: "cover",
+                        border: "1px solid #a3c4a5",
+                        flexShrink: 0,
+                      }}
+                      onError={(e) => (e.currentTarget.style.display = "none")}
+                    />
+                  )}
+                  <div>
+                    <p
+                      style={{
+                        fontSize: "0.85rem",
+                        fontWeight: "600",
+                        color: "#111827",
+                        margin: "0 0 2px",
                       }}
                     >
-                      FEATURED
-                    </span>
-                  )}
+                      {form.title.slice(0, 40)}
+                    </p>
+                    <p
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "#4f7d52",
+                        fontWeight: "800",
+                        margin: 0,
+                      }}
+                    >
+                      {formatPrice(
+                        discountedPrice(
+                          Number(form.price),
+                          Number(form.discountPercentage) || 0,
+                        ),
+                      )}
+                    </p>
+                    {form.isFeatured && (
+                      <span
+                        style={{
+                          fontSize: "0.62rem",
+                          backgroundColor: "#fef3c7",
+                          color: "#d97706",
+                          padding: "1px 6px",
+                          borderRadius: "3px",
+                          fontWeight: "700",
+                          marginTop: "3px",
+                          display: "inline-block",
+                        }}
+                      >
+                        FEATURED
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Actions */}
           <div style={{ display: "flex", gap: "10px", paddingTop: "4px" }}>
@@ -1155,10 +1218,7 @@ export default function ProductsPage() {
                   }}
                 >
                   <img
-                    src={
-                      product.thumbnail ||
-                      `https://placehold.co/200x200/4f7d52/white?text=${encodeURIComponent((product.title || "P").charAt(0))}`
-                    }
+                    src={product.images}
                     alt={product.title}
                     style={{
                       width: "100%",
@@ -1247,7 +1307,8 @@ export default function ProductsPage() {
                           margin: 0,
                         }}
                       >
-                        {formatPrice(final)}
+                        {/* {formatPrice(final)} */}
+                        {formatPrice(product.price)}
                       </p>
                       {product.discountPercentage > 0 && (
                         <p
@@ -1258,7 +1319,7 @@ export default function ProductsPage() {
                             margin: 0,
                           }}
                         >
-                          {formatPrice(product.price)}
+                          {/* {formatPrice(product.price)} */}
                         </p>
                       )}
                     </div>

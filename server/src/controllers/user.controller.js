@@ -1,7 +1,6 @@
 import argon2 from "argon2";
 import { prisma } from "../lib/prisma.js";
 
-/* ── Update profile ── */
 export const updateProfile = async (req, res, next) => {
   try {
     const { name, phone } = req.body;
@@ -23,7 +22,6 @@ export const updateProfile = async (req, res, next) => {
   }
 };
 
-/* ── Update address ── */
 export const updateAddress = async (req, res, next) => {
   try {
     const { street, city, state, zip, country } = req.body;
@@ -38,31 +36,21 @@ export const updateAddress = async (req, res, next) => {
   }
 };
 
-/* ── Change password ── */
 export const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
-
     const valid = await argon2.verify(user.password, currentPassword);
-    if (!valid) {
+    if (!valid)
       return res
         .status(400)
-        .json({ success: false, message: "Current password is incorrect." });
-    }
-
+        .json({ success: false, message: "Current password incorrect." });
     const hashed = await argon2.hash(newPassword, { type: argon2.argon2id });
     await prisma.user.update({
       where: { id: req.user.id },
       data: { password: hashed },
     });
-
-    // Invalidate all refresh tokens
-    await prisma.refreshToken.deleteMany({ where: { userId: req.user.id } });
-
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
-
+    res.clearCookie("token", { path: "/" });
     res.json({
       success: true,
       message: "Password changed. Please log in again.",
@@ -72,12 +60,11 @@ export const changePassword = async (req, res, next) => {
   }
 };
 
-/* ── Get wishlist ── */
 export const getWishlist = async (req, res, next) => {
   try {
     const items = await prisma.wishlistItem.findMany({
       where: { userId: req.user.id },
-      include: { product: true },
+      include: { product: { include: { category: true } } },
       orderBy: { createdAt: "desc" },
     });
     res.json({ success: true, data: { items } });
@@ -86,7 +73,6 @@ export const getWishlist = async (req, res, next) => {
   }
 };
 
-/* ── Toggle wishlist ── */
 export const toggleWishlist = async (req, res, next) => {
   try {
     const { productId } = req.params;
@@ -116,24 +102,11 @@ export const toggleWishlist = async (req, res, next) => {
   }
 };
 
-/* ── Get cart ── */
 export const getCart = async (req, res, next) => {
   try {
     const items = await prisma.cartItem.findMany({
       where: { userId: req.user.id },
-      include: {
-        product: {
-          select: {
-            id: true,
-            title: true,
-            price: true,
-            discountPercentage: true,
-            thumbnail: true,
-            stock: true,
-            brand: true,
-          },
-        },
-      },
+      include: { product: { include: { category: true } } },
     });
     const subtotal = items.reduce(
       (s, i) =>
@@ -158,23 +131,20 @@ export const getCart = async (req, res, next) => {
   }
 };
 
-/* ── Add to cart ── */
 export const addToCart = async (req, res, next) => {
   try {
     const { productId, quantity = 1 } = req.body;
     const product = await prisma.product.findUnique({
       where: { id: productId },
     });
-    if (!product || !product.isActive) {
+    if (!product || !product.isActive)
       return res
         .status(404)
         .json({ success: false, message: "Product not found." });
-    }
-    if (product.stock < quantity) {
+    if (product.stock < quantity)
       return res
         .status(400)
         .json({ success: false, message: "Insufficient stock." });
-    }
 
     const item = await prisma.cartItem.upsert({
       where: { userId_productId: { userId: req.user.id, productId } },
@@ -188,7 +158,6 @@ export const addToCart = async (req, res, next) => {
   }
 };
 
-/* ── Update cart item ── */
 export const updateCartItem = async (req, res, next) => {
   try {
     const { productId } = req.params;
@@ -197,7 +166,7 @@ export const updateCartItem = async (req, res, next) => {
       await prisma.cartItem.delete({
         where: { userId_productId: { userId: req.user.id, productId } },
       });
-      return res.json({ success: true, message: "Item removed from cart." });
+      return res.json({ success: true, message: "Item removed." });
     }
     const item = await prisma.cartItem.update({
       where: { userId_productId: { userId: req.user.id, productId } },
@@ -210,20 +179,47 @@ export const updateCartItem = async (req, res, next) => {
   }
 };
 
-/* ── Remove from cart ── */
 export const removeFromCart = async (req, res, next) => {
   try {
-    const { productId } = req.params;
-    await prisma.cartItem.delete({
-      where: { userId_productId: { userId: req.user.id, productId } },
+    console.log("Logged in user:", req.user.id);
+    console.log("Product:", req.params.productId);
+
+    const item = await prisma.cartItem.findUnique({
+      where: {
+        userId_productId: {
+          userId: req.user.id,
+          productId: req.params.productId,
+        },
+      },
     });
-    res.json({ success: true, message: "Removed from cart." });
+
+    console.log(item);
+
+    if (!item) {
+      return res.status(404).json({
+        success: false,
+        message: "Cart item not found",
+      });
+    }
+
+    await prisma.cartItem.delete({
+      where: {
+        userId_productId: {
+          userId: req.user.id,
+          productId: req.params.productId,
+        },
+      },
+    });
+
+    res.json({
+      success: true,
+      message: "Removed",
+    });
   } catch (err) {
     next(err);
   }
 };
 
-/* ── Clear cart ── */
 export const clearCart = async (req, res, next) => {
   try {
     await prisma.cartItem.deleteMany({ where: { userId: req.user.id } });
