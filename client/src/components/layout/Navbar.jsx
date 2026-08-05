@@ -788,7 +788,7 @@ export default function Navbar() {
             { to: "/new-arrivals", label: "✨ New Arrivals" },
             ...CATEGORIES.map((c) => ({
               to: `/category/${c.slug}`,
-              label: `${c.icon} ${c.label}`,
+              label: `${c.icon} ${c.name}`,
             })),
           ].map((link) => (
             <NavLink
