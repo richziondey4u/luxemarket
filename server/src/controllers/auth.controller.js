@@ -6,13 +6,12 @@ import { config } from "../config/config.js";
 const setCookie = (res, token) => {
   res.cookie("token", token, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: config.nodeEnv === "production",
+    sameSite: config.nodeEnv === "production" ? "none" : "lax",
+    secure: config.nodeEnv === "production", // required when sameSite is "none"
     maxAge: 30 * 24 * 60 * 60 * 1000,
     path: "/",
   });
 };
-
 export const register = async (req, res, next) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -55,13 +54,11 @@ export const register = async (req, res, next) => {
     const token = signToken(user.id, user.role);
     setCookie(res, token);
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: `Welcome, ${user.name}!`,
-        data: { user, token },
-      });
+    res.status(201).json({
+      success: true,
+      message: `Welcome, ${user.name}!`,
+      data: { user, token },
+    });
   } catch (err) {
     next(err);
   }
@@ -166,13 +163,11 @@ export const adminRegister = async (req, res, next) => {
     const token = signToken(user.id, user.role);
     setCookie(res, token);
 
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: `Admin account created!`,
-        data: { user, token },
-      });
+    res.status(201).json({
+      success: true,
+      message: `Admin account created!`,
+      data: { user, token },
+    });
   } catch (err) {
     next(err);
   }
@@ -221,7 +216,11 @@ export const adminLogin = async (req, res, next) => {
 };
 
 export const logout = async (req, res) => {
-  res.clearCookie("token", { path: "/" });
+  res.clearCookie("token", {
+    path: "/",
+    sameSite: config.nodeEnv === "production" ? "none" : "lax",
+    secure: config.nodeEnv === "production",
+  });
   res.json({ success: true, message: "Logged out." });
 };
 

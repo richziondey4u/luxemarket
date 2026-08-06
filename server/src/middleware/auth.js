@@ -4,7 +4,12 @@ import { prisma } from "../lib/prisma.js";
 
 export const authenticate = async (req, res, next) => {
   try {
-    // 1. Try Authorization header first, then cookie
+    console.log("========== AUTH ==========");
+    console.log("Origin:", req.headers.origin);
+    console.log("Cookie Header:", req.headers.cookie);
+    console.log("Cookies:", req.cookies);
+    console.log("Authorization:", req.headers.authorization);
+
     let token = null;
     const authHeader = req.headers.authorization;
 
@@ -14,16 +19,17 @@ export const authenticate = async (req, res, next) => {
       token = req.cookies.token;
     }
 
+    console.log("Extracted Token:", token);
+
     if (!token) {
-      return res
-        .status(401)
-        .json({ success: false, message: "Access denied. No token provided." });
+      return res.status(401).json({
+        success: false,
+        message: "Access denied. No token provided.",
+      });
     }
 
-    // 2. Verify token
     const decoded = jwt.verify(token, config.jwt.secret);
 
-    // 3. Check user still exists and is active
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -37,14 +43,17 @@ export const authenticate = async (req, res, next) => {
     });
 
     if (!user || !user.isActive) {
-      return res
-        .status(401)
-        .json({ success: false, message: "User not found or deactivated." });
+      return res.status(401).json({
+        success: false,
+        message: "User not found or deactivated.",
+      });
     }
 
     req.user = user;
     next();
   } catch (err) {
+    console.error(err);
+
     if (err.name === "TokenExpiredError") {
       return res.status(401).json({
         success: false,
@@ -52,7 +61,11 @@ export const authenticate = async (req, res, next) => {
         code: "TOKEN_EXPIRED",
       });
     }
-    return res.status(401).json({ success: false, message: "Invalid token." });
+
+    return res.status(401).json({
+      success: false,
+      message: "Invalid token.",
+    });
   }
 };
 
