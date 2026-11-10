@@ -1,78 +1,72 @@
-const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API = "https://dummyjson.com";
 
-async function getDB(path, opts = {}) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10000);
-  try {
-    const res = await fetch(`${API}${path}`, {
-      credentials: "include",
-      signal: controller.signal,
-      ...opts,
-    });
-    clearTimeout(timer);
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `Error ${res.status}`);
-    }
-    return res.json();
-  } catch (err) {
-    clearTimeout(timer);
-    if (err.name === "AbortError") throw new Error("Request timed out");
-    throw err;
+async function getDB(path) {
+  const res = await fetch(`${API}${path}`);
+
+  if (!res.ok) {
+    throw new Error(`Error ${res.status}`);
   }
+
+  return res.json();
 }
 
 export const api = {
-  getCategories: () =>
-    getDB("/products/categories").then((d) => d.data?.categories || []),
+  getCategories: async () => {
+    return getDB("/products/category-list");
+  },
 
-  getFeaturedProducts: (limit = 20) =>
-    getDB(`/products?limit=${limit}&sort=createdAt&order=desc`).then(
-      (d) => d.data?.products || [],
-    ),
+  getFeaturedProducts: async (limit = 20) => {
+    const d = await getDB(`/products?limit=${limit}`);
+    return d.products || [];
+  },
 
   getProductsByCategory: async (slug, limit = 100) => {
     const d = await getDB(
-      `/products?limit=${limit}&category=${encodeURIComponent(slug)}`,
+      `/products/category/${encodeURIComponent(slug)}?limit=${limit}`,
     );
+
     return {
-      products: d.data?.products || [],
-      total: d.data?.pagination?.total || 0,
+      products: d.products || [],
+      total: d.total || 0,
     };
   },
 
   getProduct: async (id) => {
     const d = await getDB(`/products/${id}`);
-    const product = d.data?.product;
-    if (!product) throw new Error("Product not found");
-    return product;
+
+    if (!d.id) throw new Error("Product not found");
+
+    return d;
   },
 
-  searchProducts: (q, limit = 30) =>
-    getDB(`/products?search=${encodeURIComponent(q)}&limit=${limit}`).then(
-      (d) => d.data?.products || [],
-    ),
+  searchProducts: async (q, limit = 30) => {
+    const d = await getDB(
+      `/products/search?q=${encodeURIComponent(q)}&limit=${limit}`,
+    );
 
-  getNewArrivals: () =>
-    getDB("/products?limit=20&sort=createdAt&order=desc").then(
-      (d) => d.data?.products || [],
-    ),
+    return d.products || [];
+  },
 
-  getBestSellers: () =>
-    getDB("/products?limit=20&featured=true").then(
-      (d) => d.data?.products || [],
-    ),
+  getNewArrivals: async () => {
+    const d = await getDB("/products?sortBy=id&order=desc&limit=20");
+    return d.products || [];
+  },
+
+  getBestSellers: async () => {
+    const d = await getDB("/products?sortBy=rating&order=desc&limit=20");
+    return d.products || [];
+  },
 
   getRelatedProducts: async (slug, excludeId) => {
     const d = await getDB(
-      `/products?limit=8&category=${encodeURIComponent(slug)}`,
+      `/products/category/${encodeURIComponent(slug)}?limit=20`,
     );
-    return (d.data?.products || [])
+
+    return (d.products || [])
       .filter((p) => String(p.id) !== String(excludeId))
       .slice(0, 6);
   },
 };
-
 
 export const formatPrice = (n) => {
   const num = Number(n);
@@ -86,6 +80,7 @@ export const formatPrice = (n) => {
     maximumFractionDigits: 0,
   }).format(num);
 };
+
 export const discountedPrice = (price, pct) => {
   const p = Number(price) || 0;
   const d = Number(pct) || 0;
